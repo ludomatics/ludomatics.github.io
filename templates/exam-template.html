@@ -1,0 +1,25 @@
+<!Doctype Html>
+<Html Lang="Es">
+<Head>
+    <Meta Charset="Utf-8">
+    <Meta Name="Viewport" Content="Width=Device-Width, Initial-Scale=1.0">
+    <Title>Ludomatics Ansheet</Title>
+    <!--link rel="stylesheet" href="style.css"-->
+</Head>
+<Body>
+    <div id="loading">Cargando examen...</div>
+    <div id="questionsContainer" style="display:none;"></div>
+    <script type="module">
+        import { generateExamSheet } from '../src/questionGenerator.js';
+        import { inputListeners } from '../src/inputListeners.js';
+
+        (async function() {
+            const BASE_PATH = './';
+            const examName = 'exam-template';
+            const examFileName = BASE_PATH + examName + '.json';
+            await generateExamSheet(examFileName);
+            inputListeners();
+        })();
+    </script>
+</Body>
+</Html>

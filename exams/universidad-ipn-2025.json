@@ -1,0 +1,44 @@
+{
+    "title": "Examen Universidad IPN 2025",
+    "sections": [
+        {
+            "title": "Matemáticas",
+            "start": 1,
+            "end": 25
+        },
+        {
+            "title": "Física",
+            "start": 26,
+            "end": 50
+        },
+        {
+            "title": "Química",
+            "start": 51,
+            "end": 75
+        },
+        {
+            "title": "Biología",
+            "start": 76,
+            "end": 100
+        },
+        {
+            "title": "Historia de México",
+            "start": 101,
+            "end": 125
+        },
+        {
+            "title": "Geografía de México",
+            "start": 126,
+            "end": 150
+        }
+    ],
+    "numberOfOptions": 5,
+    "correctAnswers": [
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E",
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E",
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E",
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E",
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E",
+        "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "A", "B", "C", "D", "E"
+    ]
+} 

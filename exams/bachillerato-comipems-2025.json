@@ -1,0 +1,56 @@
+{
+    "title": "Examen Bachillerato COMIPEMS 2025",
+    "sections": [
+        {
+            "title": "Matemáticas",
+            "start": 1,
+            "end": 20
+        },
+        {
+            "title": "Física",
+            "start": 21,
+            "end": 35
+        },
+        {
+            "title": "Química",
+            "start": 36,
+            "end": 50
+        },
+        {
+            "title": "Biología",
+            "start": 51,
+            "end": 65
+        },
+        {
+            "title": "Historia",
+            "start": 66,
+            "end": 80
+        },
+        {
+            "title": "Geografía",
+            "start": 81,
+            "end": 95
+        },
+        {
+            "title": "Español",
+            "start": 96,
+            "end": 110
+        },
+        {
+            "title": "Inglés",
+            "start": 111,
+            "end": 125
+        }
+    ],
+    "numberOfOptions": 4,
+    "correctAnswers": [
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D",
+        "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"
+    ]
+} 
