@@ -1,0 +1,81 @@
+#actionButton {
+    display: inline-block;
+    background-color: #2196f3;
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-top: 15px;
+    transition: background-color 0.2s;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#actionButton:hover {
+    background-color: #1976d2;
+}
+
+#studentName {
+    width: 25%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+
+#studentName:focus {
+    outline: none;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+#studentName::placeholder {
+    color: #999;
+}
+
+input[type="radio"] {
+    transform: scale(1.5);
+    margin: 0 8px 0 0;
+}
+
+label[for^="question"] {
+    margin-right: 10px;
+}
+
+.questions {
+    column-count: 4;
+    column-gap: 30px;
+}
+
+@media (max-width: 1200px) {
+    #studentName {
+        width: 40%;
+    }
+    
+    .questions {
+        column-count: 3;
+    }
+}
+
+@media (max-width: 900px) {
+    #studentName {
+        width: 60%;
+    }
+    
+    .questions {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    #studentName {
+        width: 80%;
+    }
+    
+    .questions {
+        column-count: 1;
+    }
+} 
