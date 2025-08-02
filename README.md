@@ -129,15 +129,3 @@ python3 -m http.server 8000
    - Copy template to new HTML file
    - Replace `generateExamSheet()` with `generateExamSheet('exam-name')`
 3. **Result**: Each HTML file loads the correct exam automatically
-
-## 🎯 Benefits
-
-1. **Simplicity**: Pure shell scripting, no complex build tools
-2. **Performance**: Static HTML files load instantly
-3. **Maintainability**: Shared codebase, no duplication
-4. **Scalability**: Add unlimited exams without code changes
-5. **Flexibility**: Works with any hosting provider
-
-## 📝 License
-
-MIT License - feel free to use and modify as needed. 
