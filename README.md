@@ -107,7 +107,7 @@ The system also supports JSON files for backward compatibility, but YAML is reco
 ### 4. **Access the Exam**
 
 ```
-http://yourserver.com/exams/examen-universidad-ipn-2025.html
+http://yourserver.com/exams/universidad-ipn-2025.html
 ```
 
 ## 🌐 URL Structure
@@ -117,26 +117,26 @@ After building, you'll have:
 ```
 yourserver.com/
 ├── exams/
-│   ├── examen-universidad-unam-2025.html
-│   ├── universidad-unam-2024.html
-│   ├── practice-2025.html
-│   └── ... (other exam files)
+│   ├── universidad-unam-2025.html
+│   ├── universidad-uam-2025.html
+│   ├── universidad-ipn-2025.html
+│   └── bachillerato-comipems-2025.html
 └── ... (other project files)
 ```
 
 ## 📋 Exam File Naming Convention
 
-Follow this pattern for exam JSON files:
+Follow this pattern for exam YAML files:
 
 ```
-{nivel}-{institucion}-{año}.json
+{nivel}-{institucion}-{año}.yaml
 ```
 
 ### Examples:
-- `universidad-unam-2025.json`
-- `universidad-uam-2025.json`
-- `universidad-ipn-2025.json`
-- `bachillerato-comipems-2025.json`
+- `universidad-unam-2025.yaml`
+- `universidad-uam-2025.yaml`
+- `universidad-ipn-2025.yaml`
+- `bachillerato-comipems-2025.yaml`
 
 ## 🔧 Development
 
@@ -147,7 +147,7 @@ Follow this pattern for exam JSON files:
 ### Testing
 ```bash
 # Build all exams
-./build-exam.sh
+./build-exams.sh
 
 # Serve locally for testing
 python3 -m http.server 8000
@@ -155,8 +155,10 @@ python3 -m http.server 8000
 
 ### How It Works
 
-1. **Template**: `templates/exam-template.html` contains the base HTML with embedded JavaScript
+1. **Template**: `templates/exam-template.html` contains the base HTML with embedded JavaScript and mock exam data
 2. **Build Process**: 
+   - Convert YAML files to JSON (temporary)
    - Copy template to new HTML file
-   - Replace `generateExamSheet()` with `generateExamSheet('exam-name')`
-3. **Result**: Each HTML file loads the correct exam automatically
+   - Embed exam data directly in HTML file
+   - Clean up intermediate JSON files
+3. **Result**: Each HTML file contains all exam data and loads automatically

@@ -1,22 +1,26 @@
 #!/bin/bash
 
 # Build script to generate HTML files from YAML exam files
+# Converts YAML to JSON (temporary), embeds data in HTML, then cleans up
 echo "🚀 Building exam HTML files..."
 
 # Check if exams directory exists
 if [ ! -d "exams" ]; then
     echo "❌ No exams directory found"
+    echo "💡 Create the 'exams' directory and add YAML files to get started"
     exit 1
 fi
 
 # Check if templates exist
 if [ ! -f "templates/exam-template.html" ]; then
     echo "❌ No templates/exam-template.html found to use as template"
+    echo "💡 Make sure the templates directory contains exam-template.html"
     exit 1
 fi
 
 if [ ! -f "templates/landing-template.html" ]; then
     echo "❌ No templates/landing-template.html found to use as template"
+    echo "💡 Make sure the templates directory contains landing-template.html"
     exit 1
 fi
 
@@ -136,10 +140,26 @@ generated_count=0
 
 # First, convert YAML files to JSON (if any)
 echo "🔄 Converting YAML files to JSON..."
+
+# Check if required Python scripts exist
+if [ ! -f "yaml_to_json.py" ]; then
+    echo "❌ Error: yaml_to_json.py not found"
+    exit 1
+fi
+
+if [ ! -f "embed_exam_data.py" ]; then
+    echo "❌ Error: embed_exam_data.py not found"
+    exit 1
+fi
+
 for yaml_file in exams/*.yaml; do
     if [ -f "$yaml_file" ]; then
         echo "📝 Converting: $(basename "$yaml_file")"
         python3 yaml_to_json.py "$yaml_file"
+        if [ $? -ne 0 ]; then
+            echo "❌ Error converting $(basename "$yaml_file")"
+            exit 1
+        fi
     fi
 done
 
@@ -166,6 +186,10 @@ for json_file in exams/*.json; do
 
         # Embed exam data directly in the HTML file
         python3 embed_exam_data.py "$json_file" "$html_file"
+        if [ $? -ne 0 ]; then
+            echo "❌ Error embedding exam data in $(basename "$html_file")"
+            exit 1
+        fi
         
         # Remove backup file
         rm "${html_file}.bak"

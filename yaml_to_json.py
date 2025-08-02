@@ -16,6 +16,18 @@ def convert_yaml_to_json(yaml_file_path):
     with open(yaml_file_path, 'r', encoding='utf-8') as file:
         yaml_data = yaml.safe_load(file)
     
+    # Basic validation
+    required_fields = ['title', 'numberOfOptions', 'sections', 'correctAnswers']
+    for field in required_fields:
+        if field not in yaml_data:
+            raise ValueError(f"Missing required field: {field}")
+    
+    if not isinstance(yaml_data['correctAnswers'], dict):
+        raise ValueError("correctAnswers must be a dictionary with question numbers as keys")
+    
+    if not yaml_data['correctAnswers']:
+        raise ValueError("correctAnswers cannot be empty")
+    
     # Convert the correctAnswers from numbered format to array format
     if 'correctAnswers' in yaml_data and isinstance(yaml_data['correctAnswers'], dict):
         # Convert numbered answers (1: A, 2: B, etc.) to array format
