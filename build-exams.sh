@@ -4,10 +4,10 @@
 # Converts YAML to JSON (temporary), embeds data in HTML, then cleans up
 echo "🚀 Building exam HTML files..."
 
-# Check if exams directory exists
-if [ ! -d "exams" ]; then
-    echo "❌ No exams directory found"
-    echo "💡 Create the 'exams' directory and add YAML files to get started"
+# Check if source directory exists
+if [ ! -d "source" ]; then
+    echo "❌ No source directory found"
+    echo "💡 Create the 'source' directory and add YAML files to get started"
     exit 1
 fi
 
@@ -148,7 +148,7 @@ if [ ! -f "embed_exam_data.py" ]; then
     exit 1
 fi
 
-for yaml_file in exams/*.yaml; do
+for yaml_file in source/*.yaml; do
     if [ -f "$yaml_file" ]; then
         echo "📝 Converting: $(basename "$yaml_file")"
         python3 yaml_to_json.py "$yaml_file"
@@ -201,7 +201,7 @@ generateLandingPage
 
 # Clean up intermediate JSON files that were converted from YAML
 echo "🧹 Cleaning up intermediate JSON files..."
-for yaml_file in exams/*.yaml; do
+for yaml_file in source/*.yaml; do
     if [ -f "$yaml_file" ]; then
         base_name=$(basename "$yaml_file" .yaml)
         json_file="exams/${base_name}.json"
