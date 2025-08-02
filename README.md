@@ -1,6 +1,6 @@
 # AnSheet V3 - Simple Exam Generation System
 
-A clean and simple exam generation system that creates individual HTML files for each exam from JSON configuration files.
+A clean and simple exam generation system that creates individual HTML files for each exam from YAML configuration files.
 
 ## 🚀 Features
 
@@ -8,33 +8,35 @@ A clean and simple exam generation system that creates individual HTML files for
 - **Multiple Exams**: Generate individual HTML files for each exam
 - **No Code Duplication**: Shared JavaScript files in `src/`
 - **Easy Maintenance**: Add new exams by creating YAML files
-- **User-Friendly Format**: YAML format for non-technical users (JSON supported for legacy)
+- **User-Friendly Format**: YAML format for non-technical users
 - **Direct Access**: Each exam has its own URL
 - **Embedded Data**: Exam data embedded directly in HTML files (no external JSON dependencies)
+- **Clean Architecture**: Separated source files from generated files
 
 ## 📁 Project Structure
 
 ```
 ansheetV3/
 ├── index.html              # Auto-generated landing page
-├── exams/                   # Exam files (YAML format)
-│   ├── universidad-unam-2025.yaml
-│   ├── universidad-ipn-2025.yaml
-│   ├── universidad-uam-2025.yaml
-│   └── bachillerato-comipems-2025.yaml
-├── templates/               # HTML templates
-│   ├── exam-template.html  # Exam template (with mock data for testing)
-│   └── landing-template.html # Landing page template
-├── src/                     # Shared JavaScript files
+├── source/                 # Source YAML files (from Firestore)
+│   ├── comipems-*.yaml     # COMIPEMS exam files
+│   └── universidad-*.yaml  # University exam files
+├── exams/                  # Generated HTML files
+├── templates/              # HTML templates + template YAML
+│   ├── exam-template.html  # Exam template
+│   ├── landing-template.html # Landing page template
+│   └── exam-template.yaml  # Template YAML for testing
+├── src/                    # Shared JavaScript files
 │   ├── config.js           # Configuration
 │   ├── utils.js            # Utilities
 │   ├── questionGenerator.js # Question generation
 │   ├── resultsRenderer.js  # Results display
 │   ├── inputListeners.js   # Event handlers
 │   └── gradingService.js   # Grading logic
+
 ├── build-exams.sh          # Build script
 ├── yaml_to_json.py         # YAML to JSON converter
-└── style.css               # Stylesheet
+└── index.css               # Stylesheet
 ```
 
 ## 🛠️ Usage
@@ -47,7 +49,7 @@ Generate HTML files for all exams in the `exams/` directory:
 ./build-exams.sh
 ```
 
-**Note:** The `templates/exam-template.html` contains mock exam data for quick testing. The build script will replace this with actual exam data from YAML files.
+**Note:** The `templates/exam-template.yaml` contains sample exam data for testing. The build script will process all YAML files from the `source/` directory.
 
 This will:
 - Convert YAML files to JSON (temporary)
@@ -60,11 +62,9 @@ This will:
 
 ### 2. **Add New Exams**
 
-You can create exam files in two formats:
+You can create exam files in YAML format:
 
-#### Option A: YAML Format (Recommended for non-technical users)
-
-Create a `.yaml` file in `exams/` directory:
+Create a `.yaml` file in `source/` directory:
 
 ```yaml
 # Exam Configuration
@@ -93,10 +93,6 @@ correctAnswers:
   7: B
   # ... continue for all questions
 ```
-
-#### Option B: JSON Format (Legacy support)
-
-The system also supports JSON files for backward compatibility, but YAML is recommended for new exams.
 
 ### 3. **Run the Build Script**
 
