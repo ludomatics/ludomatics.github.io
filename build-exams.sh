@@ -35,7 +35,6 @@ generateLandingPage() {
     
     # Initialize variables
     local exam_sections=""
-    local total_exams=0
     
     # Categorize exams
     local universidad_exams=""
@@ -65,8 +64,6 @@ generateLandingPage() {
             else
                 practice_exams="$practice_exams$exam_card"
             fi
-            
-            ((total_exams++))
         fi
     done
     
@@ -74,7 +71,7 @@ generateLandingPage() {
     if [ -n "$universidad_exams" ]; then
         exam_sections="$exam_sections
         <div class='category'>
-            <h2>🎓 Exámenes Universitarios</h2>
+            <h2>🎓 Exámenes Universidad</h2>
             <div class='exam-grid'>
                 $universidad_exams
             </div>
@@ -84,7 +81,7 @@ generateLandingPage() {
     if [ -n "$bachillerato_exams" ]; then
         exam_sections="$exam_sections
         <div class='category'>
-            <h2>🏫 Exámenes de Bachillerato</h2>
+            <h2>🏫 Exámenes Bachillerato</h2>
             <div class='exam-grid'>
                 $bachillerato_exams
             </div>
@@ -106,7 +103,6 @@ generateLandingPage() {
     echo "$template" > temp_template.html
     
     # Replace placeholders one by one
-    sed -i.bak "s/{{TOTAL_EXAMS}}/$total_exams/g" temp_template.html
     
     # Fix CSS path for the generated index.html (change ../index.css to index.css)
     sed -i.bak "s|../index.css|index.css|g" temp_template.html
