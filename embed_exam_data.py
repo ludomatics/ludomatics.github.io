@@ -36,32 +36,45 @@ def embed_exam_data_in_html(json_file_path, html_file_path):
     # Convert to JSON with custom formatting
     exam_data_js = json.dumps(exam_data_formatted, ensure_ascii=False, indent=2)
     
-    # Put correctAnswers on a single line
+    # Put correctAnswers and sections on single lines
     lines = exam_data_js.split('\n')
     formatted_lines = []
     in_correct_answers = False
+    in_sections = False
     
     for line in lines:
         if '"correctAnswers": [' in line:
             in_correct_answers = True
             # Start the correctAnswers array
             formatted_lines.append(line)
+        elif '"sections": [' in line:
+            in_sections = True
+            # Start the sections array
+            formatted_lines.append(line)
         elif in_correct_answers and ']' in line:
             # End of correctAnswers array
             in_correct_answers = False
             formatted_lines.append(line)
-        elif in_correct_answers:
-            # Skip individual answer lines, they'll be added as a single line
+        elif in_sections and ']' in line:
+            # End of sections array
+            in_sections = False
+            formatted_lines.append(line)
+        elif in_correct_answers or in_sections:
+            # Skip individual lines, they'll be added as single lines
             continue
         else:
             formatted_lines.append(line)
     
-    # Reconstruct with correctAnswers on a single line
+    # Reconstruct with compact arrays
     exam_data_js = '\n'.join(formatted_lines)
     
     # Replace the multi-line correctAnswers with a single line
     answers_single_line = '[' + ', '.join(f'"{answer}"' for answer in exam_data['correctAnswers']) + ']'
     exam_data_js = re.sub(r'"correctAnswers": \[\s*[\s\S]*?\s*\]', f'"correctAnswers": {answers_single_line}', exam_data_js)
+    
+    # Replace the multi-line sections with a single line
+    sections_single_line = '[' + ', '.join(f'{{"title": "{section["title"]}", "start": {section["start"]}, "end": {section["end"]}}}' for section in exam_data['sections']) + ']'
+    exam_data_js = re.sub(r'"sections": \[\s*[\s\S]*?\s*\]', f'"sections": {sections_single_line}', exam_data_js)
     
     # Replace the existing examData with the new data
     # This handles both the template with mock data and the old pattern
