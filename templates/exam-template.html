@@ -15,7 +15,22 @@
 
         (async function() {
             const examData = {
-                // Exam data will be embedded here by build script
+                "title": "Examen de Práctica",
+                "numberOfOptions": 4,
+                "sections": [
+                    {
+                        "title": "Matemáticas",
+                        "start": 1,
+                        "end": 3
+                    },
+                    {
+                        "title": "Ciencias",
+                        "start": 4,
+                        "end": 6
+                    }
+                ],
+                "correctAnswers": ["A", "B", "C", "D", "A", "B"],
+                "numberOfQuestions": 6
             };
             await generateExamSheet(examData);
             inputListeners();

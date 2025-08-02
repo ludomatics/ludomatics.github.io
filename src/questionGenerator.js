@@ -16,7 +16,7 @@ async function generateExamSheet(examData) {
 
     try {
         // Extract exam data from the passed object
-        const { numberOfQuestions, numberOfOptions, examSheetName, correctAnswers, sections } = examData;
+        const { numberOfQuestions, numberOfOptions, title, correctAnswers, sections } = examData;
         
         // Update exam state
         examState.correctAnswers = correctAnswers;
@@ -32,7 +32,7 @@ async function generateExamSheet(examData) {
 
         // Create exam header
         const headerTitleHTML = DOMUtils.createElement('h2');
-        headerTitleHTML.innerHTML = examSheetName;
+        headerTitleHTML.innerHTML = title;
         questionsContainer.appendChild(headerTitleHTML);
 
         // Add input for student name below the title

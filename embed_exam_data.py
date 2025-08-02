@@ -63,8 +63,9 @@ def embed_exam_data_in_html(json_file_path, html_file_path):
     answers_single_line = '[' + ', '.join(f'"{answer}"' for answer in exam_data['correctAnswers']) + ']'
     exam_data_js = re.sub(r'"correctAnswers": \[\s*[\s\S]*?\s*\]', f'"correctAnswers": {answers_single_line}', exam_data_js)
     
-    # Replace the generateExamSheet call with embedded data
-    old_pattern = r'const examData = \{\s*// Exam data will be embedded here by build script\s*\};'
+    # Replace the existing examData with the new data
+    # This handles both the template with mock data and the old pattern
+    old_pattern = r'const examData = \{[\s\S]*?\};'
     new_content = f'const examData = {exam_data_js};'
     
     # Replace the pattern

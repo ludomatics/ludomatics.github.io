@@ -23,8 +23,7 @@ ansheetV3/
 │   ├── universidad-uam-2025.yaml
 │   └── bachillerato-comipems-2025.yaml
 ├── templates/               # HTML templates
-│   ├── exam-template.html  # Exam template
-│   ├── exam-template.yaml  # YAML template
+│   ├── exam-template.html  # Exam template (with mock data for testing)
 │   └── landing-template.html # Landing page template
 ├── src/                     # Shared JavaScript files
 │   ├── config.js           # Configuration
@@ -33,7 +32,7 @@ ansheetV3/
 │   ├── resultsRenderer.js  # Results display
 │   ├── inputListeners.js   # Event handlers
 │   └── gradingService.js   # Grading logic
-├── build-exam.sh           # Build script
+├── build-exams.sh          # Build script
 ├── yaml_to_json.py         # YAML to JSON converter
 └── style.css               # Stylesheet
 ```
@@ -45,8 +44,10 @@ ansheetV3/
 Generate HTML files for all exams in the `exams/` directory:
 
 ```bash
-./build-exam.sh
+./build-exams.sh
 ```
+
+**Note:** The `templates/exam-template.html` contains mock exam data for quick testing. The build script will replace this with actual exam data from YAML files.
 
 This will:
 - Convert YAML files to JSON (temporary)
@@ -100,7 +101,7 @@ The system also supports JSON files for backward compatibility, but YAML is reco
 ### 3. **Run the Build Script**
 
 ```bash
-./build-exam.sh
+./build-exams.sh
 ```
 
 ### 4. **Access the Exam**
