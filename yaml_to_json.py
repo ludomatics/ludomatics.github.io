@@ -62,9 +62,12 @@ def main():
         # Convert YAML to JSON
         json_data = convert_yaml_to_json(yaml_file)
         
-        # Generate output filename
-        base_name = os.path.splitext(yaml_file)[0]
-        json_file = base_name + '.json'
+        # Generate output filename in exams directory
+        base_name = os.path.basename(os.path.splitext(yaml_file)[0])
+        json_file = os.path.join('exams', base_name + '.json')
+        
+        # Ensure exams directory exists
+        os.makedirs('exams', exist_ok=True)
         
         # Write JSON file
         with open(json_file, 'w', encoding='utf-8') as file:
