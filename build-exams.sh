@@ -39,7 +39,7 @@ generateLandingPage() {
     # Categorize exams
     local universidad_exams=""
     local bachillerato_exams=""
-    local practice_exams=""
+    local other_exams=""
     
     # Process each JSON file to build exam sections (including converted YAML files)
     for json_file in exams/*.json; do
@@ -59,10 +59,10 @@ generateLandingPage() {
             # Categorize based on filename
             if [[ "$exam_name" == *"universidad"* ]]; then
                 universidad_exams="$universidad_exams$exam_card"
-            elif [[ "$exam_name" == *"bachillerato"* ]]; then
+            elif [[ "$exam_name" == *"bachillerato"* ]] || [[ "$exam_name" == *"comipems"* ]]; then
                 bachillerato_exams="$bachillerato_exams$exam_card"
             else
-                practice_exams="$practice_exams$exam_card"
+                other_exams="$other_exams$exam_card"
             fi
         fi
     done
@@ -88,12 +88,12 @@ generateLandingPage() {
         </div>"
     fi
     
-    if [ -n "$practice_exams" ]; then
+    if [ -n "$other_exams" ]; then
         exam_sections="$exam_sections
         <div class='category'>
-            <h2>📝 Exámenes de Práctica</h2>
+            <h2>📝 Otros Exámenes</h2>
             <div class='exam-grid'>
-                $practice_exams
+                $other_exams
             </div>
         </div>"
     fi
