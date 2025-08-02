@@ -1,6 +1,5 @@
 import { CONFIG } from './config.js';
 import { DOMUtils, DataUtils, MessageUtils } from './utils.js';
-import { ExamService } from './examService.js';
 
 
 
@@ -10,15 +9,13 @@ let examState = {
     sections: []
 };
 
-async function generateExamSheet(examName) {
+async function generateExamSheet(examData) {
     // Show loading, hide questions
     DOMUtils.setDisplay(CONFIG.ELEMENTS.LOADING, 'block');
     DOMUtils.setDisplay(CONFIG.ELEMENTS.QUESTIONS_CONTAINER, 'none');
 
     try {
-        // Create exam service instance with provided exam name
-        const examService = new ExamService(examName);
-        const examData = await examService.fetchExamData();
+        // Extract exam data from the passed object
         const { numberOfQuestions, numberOfOptions, examSheetName, correctAnswers, sections } = examData;
         
         // Update exam state

@@ -14,10 +14,10 @@
         import { inputListeners } from '../src/inputListeners.js';
 
         (async function() {
-            const BASE_PATH = './';
-            const examName = 'exam-template';
-            const examFileName = BASE_PATH + examName + '.json';
-            await generateExamSheet(examFileName);
+            const examData = {
+                // Exam data will be embedded here by build script
+            };
+            await generateExamSheet(examData);
             inputListeners();
         })();
     </script>
