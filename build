@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Main build script for AnSheet V3
+# This script orchestrates the build process by calling individual build scripts
+
+set -e  # Exit on any error
+
+echo "🚀 Starting AnSheet V3 build process..."
+
+# Check if scripts directory exists
+if [ ! -d "scripts" ]; then
+    echo "❌ No scripts directory found"
+    echo "💡 Make sure the scripts directory exists with build scripts"
+    exit 1
+fi
+
+# Check if individual build scripts exist
+if [ ! -f "scripts/build-html-exams.sh" ]; then
+    echo "❌ No scripts/build-html-exams.sh found"
+    exit 1
+fi
+
+if [ ! -f "scripts/build-landing-page.sh" ]; then
+    echo "❌ No scripts/build-landing-page.sh found"
+    exit 1
+fi
+
+# Make scripts executable
+chmod +x scripts/build-html-exams.sh
+chmod +x scripts/build-landing-page.sh
+
+echo ""
+echo "📝 Step 1: Building HTML exam files..."
+./scripts/build-html-exams.sh
+
+echo ""
+echo "📝 Step 2: Building landing page..."
+./scripts/build-landing-page.sh
+
+echo ""
+echo "🎉 Build process completed successfully!"
+echo "📄 Generated files:"
+echo "   - HTML exam files in exams/ directory"
+echo "   - Landing page: index.html"
+echo ""
+echo "🌐 You can now open index.html in your browser to view the application." 

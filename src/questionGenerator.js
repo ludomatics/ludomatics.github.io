@@ -16,7 +16,10 @@ async function generateExamSheet(examData) {
 
     try {
         // Extract exam data from the passed object
-        const { numberOfQuestions, numberOfOptions, title, correctAnswers, sections } = examData;
+        const { numberOfOptions, title, correctAnswers, sections } = examData;
+        
+        // Calculate numberOfQuestions from correctAnswers length if not provided
+        const numberOfQuestions = examData.numberOfQuestions || correctAnswers.length;
         
         // Update exam state
         examState.correctAnswers = correctAnswers;

@@ -10,8 +10,9 @@ A clean and simple exam generation system that creates individual HTML files for
 - **Easy Maintenance**: Add new exams by creating YAML files
 - **User-Friendly Format**: YAML format for non-technical users
 - **Direct Access**: Each exam has its own URL
-- **Embedded Data**: Exam data embedded directly in HTML files (no external JSON dependencies)
+- **Flexible Data Loading**: Exam data loaded from JSON files via ExamService
 - **Clean Architecture**: Separated source files from generated files
+- **Backward Compatibility**: Supports both embedded and external JSON data
 
 ## 📁 Project Structure
 
@@ -32,7 +33,8 @@ ansheetV3/
 │   ├── questionGenerator.js # Question generation
 │   ├── resultsRenderer.js  # Results display
 │   ├── inputListeners.js   # Event handlers
-│   └── gradingService.js   # Grading logic
+│   ├── gradingService.js   # Grading logic
+│   └── examService.js      # Exam data loading and management
 
 ├── build-exams.sh          # Build script
 ├── yaml_to_json.py         # YAML to JSON converter
@@ -52,13 +54,12 @@ Generate HTML files for all exams in the `exams/` directory:
 **Note:** The `templates/exam-template.yaml` contains sample exam data for testing. The build script will process all YAML files from the `source/` directory.
 
 This will:
-- Convert YAML files to JSON (temporary)
-- Embed exam data directly in HTML files
+- Convert YAML files to JSON (permanent assets)
 - Generate individual HTML files in the `exams/` directory
-- Each HTML file contains all exam data and calls `generateExamSheet(examData)`
+- Each HTML file uses ExamService to load data from corresponding JSON files
 - Add auto-generated comments to prevent manual modifications
 - Generate a landing page (`index.html`) with all available exams organized by category
-- Clean up intermediate JSON files (converted from YAML)
+- Keep JSON files as permanent assets for flexible data management
 
 ### 2. **Add New Exams**
 

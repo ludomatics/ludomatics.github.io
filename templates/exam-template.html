@@ -12,28 +12,33 @@
     <script type="module">
         import { generateExamSheet } from '../src/questionGenerator.js';
         import { inputListeners } from '../src/inputListeners.js';
+        import { examService } from '../src/examService.js';
 
         (async function() {
-            const examData = {
-                "title": "Examen de Práctica",
-                "numberOfOptions": 4,
-                "sections": [
-                    {
-                        "title": "Matemáticas",
-                        "start": 1,
-                        "end": 3
-                    },
-                    {
-                        "title": "Ciencias",
-                        "start": 4,
-                        "end": 6
-                    }
-                ],
-                "correctAnswers": ["A", "B", "C", "D", "A", "B"],
-                "numberOfQuestions": 6
-            };
-            await generateExamSheet(examData);
-            inputListeners();
+            try {
+                // Get exam name from URL or use a default
+                const pathParts = window.location.pathname.split('/');
+                const examFileName = pathParts[pathParts.length - 1];
+                const examName = examFileName.replace('.html', '');
+                
+                // Load exam data using ExamService
+                const examData = await examService.getExamDataFromEmbeddedOrFile(examName);
+                
+                if (!examData) {
+                    throw new Error('No exam data found');
+                }
+                
+                // Validate exam data
+                if (!examService.validateExamData(examData)) {
+                    throw new Error('Invalid exam data structure');
+                }
+                
+                await generateExamSheet(examData);
+                inputListeners();
+            } catch (error) {
+                console.error('Error loading exam:', error);
+                document.getElementById('loading').innerHTML = 'Error cargando el examen. Por favor, recarga la página.';
+            }
         })();
     </script>
 </Body>
