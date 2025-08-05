@@ -36,11 +36,14 @@ ansheetV3/
 │   ├── gradingService.js   # Grading logic
 │   └── examService.js      # Exam data loading and management
 
-├── build-exams.sh          # Build script
-├── bin/
+├── build                   # Main build script (orchestrates the process)
+├── bin/                    # Build tools and scripts
+│   ├── build-html-exams.sh # HTML exam file generator
+│   ├── build-landing-page.sh # Landing page generator
 │   ├── yaml_to_json.py     # YAML to JSON converter
 │   └── embed_exam_data.py  # Exam data embedder
-└── index.css               # Stylesheet
+├── index.css               # Stylesheet
+└── exam.css                # Exam-specific stylesheet
 ```
 
 ## 🛠️ Usage
@@ -50,15 +53,16 @@ ansheetV3/
 Generate HTML files for all exams in the `exams/` directory:
 
 ```bash
-./build-exams.sh
+./build
 ```
 
-**Note:** The `templates/exam-template.yaml` contains sample exam data for testing. The build script will process all YAML files from the `source/` directory.
+**Note:** The build process processes all YAML files from the `source/` directory and converts them to JSON files.
 
 This will:
 - Convert YAML files to JSON (permanent assets)
 - Generate individual HTML files in the `exams/` directory
-- Each HTML file uses ExamService to load data from corresponding JSON files
+- Each HTML file dynamically loads data from corresponding JSON files via ExamService
+- Replace the `examName` variable in each HTML file with the correct exam filename
 - Add auto-generated comments to prevent manual modifications
 - Generate a landing page (`index.html`) with all available exams organized by category
 - Keep JSON files as permanent assets for flexible data management
@@ -100,8 +104,12 @@ correctAnswers:
 ### 3. **Run the Build Script**
 
 ```bash
-./build-exams.sh
+./build
 ```
+
+**Individual Build Steps:**
+- `./bin/build-html-exams.sh` - Generate only HTML exam files
+- `./bin/build-landing-page.sh` - Generate only the landing page
 
 ### 4. **Access the Exam**
 
@@ -139,6 +147,16 @@ Follow this pattern for exam YAML files:
 
 ## 🔧 Development
 
+### Build Architecture
+
+The build system is organized into modular components:
+
+- **Main Build Script** (`./build`): Orchestrates the complete build process
+- **HTML Exam Generator** (`./bin/build-html-exams.sh`): Converts YAML to JSON and generates HTML files
+- **Landing Page Generator** (`./bin/build-landing-page.sh`): Creates the main landing page
+- **YAML to JSON Converter** (`./bin/yaml_to_json.py`): Converts YAML exam files to JSON format
+- **Variable Replacer** (`./bin/embed_exam_data.py`): Replaces `examName` variable in HTML templates
+
 ### Prerequisites
 - Bash shell
 - Web server (for testing)
@@ -146,7 +164,7 @@ Follow this pattern for exam YAML files:
 ### Testing
 ```bash
 # Build all exams
-./build-exams.sh
+./build
 
 # Serve locally for testing
 python3 -m http.server 8000
@@ -154,10 +172,10 @@ python3 -m http.server 8000
 
 ### How It Works
 
-1. **Template**: `templates/exam-template.html` contains the base HTML with embedded JavaScript and mock exam data
+1. **Template**: `templates/exam-template.html` contains the base HTML with embedded JavaScript and a placeholder `examName` variable
 2. **Build Process**: 
-   - Convert YAML files to JSON (temporary)
+   - Convert YAML files to JSON (permanent assets)
    - Copy template to new HTML file
-   - Embed exam data directly in HTML file
-   - Clean up intermediate JSON files
-3. **Result**: Each HTML file contains all exam data and loads automatically
+   - Replace the `examName` variable with the correct exam filename
+   - Each HTML file dynamically loads exam data from its corresponding JSON file via ExamService
+3. **Result**: Each HTML file loads exam data dynamically and can be accessed directly via URL
