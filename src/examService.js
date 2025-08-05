@@ -9,9 +9,9 @@ export class ExamService {
      * @param {string} examName - The name of the exam file (without extension)
      * @returns {Promise<Object>} The exam data
      */
-    async loadExamData(examName) {
+    async loadExamData(examPath) {
         try {
-            const response = await fetch(`../exams/${examName}.json`);
+            const response = await fetch(examPath);
             if (!response.ok) {
                 throw new Error(`Failed to load exam data: ${response.statusText}`);
             }

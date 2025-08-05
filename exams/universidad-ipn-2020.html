@@ -19,11 +19,8 @@
 
         (async function() {
             try {
-                // Get exam name from URL or use a default
-                const pathParts = window.location.pathname.split('/');
-                const examFileName = pathParts[pathParts.length - 1];
-                const examName = examFileName.replace('.html', '');
-                
+                const examName = "universidad-ipn-2020.json";
+                const examPath = `./${examName}.json`;
                 // Load exam data using ExamService
                 const examData = await examService.getExamDataFromEmbeddedOrFile(examName);
                 

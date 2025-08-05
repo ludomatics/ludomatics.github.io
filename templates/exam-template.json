@@ -1,0 +1,38 @@
+{
+    "title": "Examen Bachillerato COMIPEMS 2025",
+    "sections": [
+        {
+            "title": "Matemáticas",
+            "start": 1,
+            "end": 5
+        },
+        {
+            "title": "Física",
+            "start": 6,
+            "end": 10
+        },
+        {
+            "title": "Química",
+            "start": 11,
+            "end": 15
+        }
+    ],
+    "numberOfOptions": 4,
+    "correctAnswers": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "A",
+        "B",
+        "C",
+        "D",
+        "A",
+        "B",
+        "C",
+        "D",
+        "A",
+        "B",
+        "C"
+    ]
+}
