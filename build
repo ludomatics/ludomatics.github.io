@@ -7,35 +7,35 @@ set -e  # Exit on any error
 
 echo "🚀 Starting AnSheet V3 build process..."
 
-# Check if scripts directory exists
-if [ ! -d "scripts" ]; then
-    echo "❌ No scripts directory found"
-    echo "💡 Make sure the scripts directory exists with build scripts"
+# Check if bin directory exists
+if [ ! -d "bin" ]; then
+    echo "❌ No bin directory found"
+    echo "💡 Make sure the bin directory exists with build scripts"
     exit 1
 fi
 
 # Check if individual build scripts exist
-if [ ! -f "scripts/build-html-exams.sh" ]; then
-    echo "❌ No scripts/build-html-exams.sh found"
+if [ ! -f "bin/build-html-exams.sh" ]; then
+    echo "❌ No bin/build-html-exams.sh found"
     exit 1
 fi
 
-if [ ! -f "scripts/build-landing-page.sh" ]; then
-    echo "❌ No scripts/build-landing-page.sh found"
+if [ ! -f "bin/build-landing-page.sh" ]; then
+    echo "❌ No bin/build-landing-page.sh found"
     exit 1
 fi
 
 # Make scripts executable
-chmod +x scripts/build-html-exams.sh
-chmod +x scripts/build-landing-page.sh
+chmod +x bin/build-html-exams.sh
+chmod +x bin/build-landing-page.sh
 
 echo ""
 echo "📝 Step 1: Building HTML exam files..."
-./scripts/build-html-exams.sh
+./bin/build-html-exams.sh
 
 echo ""
 echo "📝 Step 2: Building landing page..."
-./scripts/build-landing-page.sh
+./bin/build-landing-page.sh
 
 echo ""
 echo "🎉 Build process completed successfully!"

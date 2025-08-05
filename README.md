@@ -37,7 +37,9 @@ ansheetV3/
 │   └── examService.js      # Exam data loading and management
 
 ├── build-exams.sh          # Build script
-├── yaml_to_json.py         # YAML to JSON converter
+├── bin/
+│   ├── yaml_to_json.py     # YAML to JSON converter
+│   └── embed_exam_data.py  # Exam data embedder
 └── index.css               # Stylesheet
 ```
 
