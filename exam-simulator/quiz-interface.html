@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Interface</title>
+    <link rel="stylesheet" href="quiz-interface.css">
+</head>
+<body>
+    <div class="quiz-container">
+        <!-- Exam Title -->
+        <div class="exam-title"></div>
+        
+        <!-- Header Section -->
+        <div class="quiz-header">
+            <div class="subject">Matemáticas</div>
+            <div class="question-jump">Go to nth question</div>
+        </div>
+
+        <!-- Question and Options Section -->
+        <div class="question-section">
+            <div class="question-text">1. Here should be the text of the question</div>
+            
+            <div class="options-list">
+                <label class="option-item">
+                    <input type="radio" name="question1" value="A">
+                    <span class="option-text">Option A</span>
+                </label>
+                
+                <label class="option-item">
+                    <input type="radio" name="question1" value="B">
+                    <span class="option-text">Option B</span>
+                </label>
+                
+                <label class="option-item">
+                    <input type="radio" name="question1" value="C">
+                    <span class="option-text">Option C</span>
+                </label>
+                
+                <label class="option-item">
+                    <input type="radio" name="question1" value="D">
+                    <span class="option-text">Option D</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Navigation Section -->
+        <div class="navigation-section">
+            <button class="btn btn-previous" disabled>Anterior</button>
+            <button class="btn btn-next">Siguiente</button>
+        </div>
+    </div>
+
+    <script src="questions-repository.js"></script>
+    <script src="quiz-interface.js"></script>
+</body>
+</html>
