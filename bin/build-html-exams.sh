@@ -32,6 +32,12 @@ if [ ! -f "bin/embed_exam_data.py" ]; then
     exit 1
 fi
 
+if ! python3 -c "import yaml" 2>/dev/null; then
+    echo "❌ PyYAML is not installed (required for bin/yaml_to_json.py)"
+    echo "💡 Run: pip3 install -r requirements.txt"
+    exit 1
+fi
+
 # Clean up old generated HTML files (but keep JSON files)
 echo "🧹 Cleaning up old generated HTML files..."
 rm -f exams/*.html
