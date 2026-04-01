@@ -17,6 +17,7 @@ export const CONFIG = {
     // CSS classes
     CLASSES: {
         QUESTIONS: 'questions',
+        QUESTION_OPTION: 'question-option',
         FEEDBACK: 'feedback',
         TOTAL_CORRECT: 'total-correct',
         SECTIONS_SUMMARY: 'sections-summary'

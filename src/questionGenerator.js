@@ -111,10 +111,15 @@ function _generateQuestionOptions(questionNumber, numOfOptions) {
     const optionsInLetter = DataUtils.makeLetterOptions(numOfOptions);
     
     let listOfOptionsHTML = '';
+    const optionClass = CONFIG.CLASSES.QUESTION_OPTION;
     for (let index = 0; index < numOfOptions; index++) {
+        const letter = optionsInLetter[index];
+        const optionId = `question${questionNumber}Option${letter}`;
         const template = `
-        <label for="question${questionNumber}Option${optionsInLetter[index]}">${optionsInLetter[index]}</label>
-        <input type="radio" name="question${questionNumber}" value="${optionsInLetter[index]}" />
+        <label class="${optionClass}">
+            <input type="radio" id="${optionId}" name="question${questionNumber}" value="${letter}" class="question-option-input" aria-label="Opción ${letter}" />
+            <span class="question-option-face" aria-hidden="true">${letter}</span>
+        </label>
         `;
         listOfOptionsHTML += template;
     }
