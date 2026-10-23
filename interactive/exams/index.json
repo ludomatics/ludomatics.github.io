@@ -1,0 +1,11 @@
+{
+  "exams": [
+    {
+      "id": "mock-exam",
+      "title": "Examen de prueba",
+      "category": "Universidad",
+      "questionCount": 12,
+      "description": "Preguntas de ejemplo para probar la interfaz."
+    }
+  ]
+}
