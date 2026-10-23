@@ -1,11 +1,20 @@
 {
   "exams": [
     {
-      "id": "mock-exam",
-      "title": "Examen de prueba",
+      "id": "unam-2021-area-1",
+      "title": "UNAM 2021 · Área 1",
       "category": "Universidad",
-      "questionCount": 12,
-      "description": "Preguntas de ejemplo para probar la interfaz."
+      "questionCount": 120,
+      "description": "Ciencias Biológicas, Químicas y de la Salud. Examen muestra de la guía oficial.",
+      "protected": true
+    },
+    {
+      "id": "unam-2020-bachillerato-b",
+      "title": "UNAM 2020 · Bachillerato",
+      "category": "Bachillerato",
+      "questionCount": 127,
+      "description": "Concurso de asignación 2020, educación media superior (versión B).",
+      "protected": true
     }
   ]
 }

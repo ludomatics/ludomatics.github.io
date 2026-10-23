@@ -1,5 +1,5 @@
 // Interactive exam: one question at a time, autosave, question map, results and review.
-import { fetchExam, grade, ExamError } from './exam.js';
+import { loadExamFile, unlockExam, normalizeExam, grade, ExamError } from './exam.js';
 import { loadAttempt, saveAttempt, clearAttempt } from './storage.js';
 
 const app = document.getElementById('app');
@@ -7,15 +7,22 @@ let exam = null;
 let state = null;
 let storageOk = true;
 let nameError = '';
+let zoom = null; // { src, title } of a reference image shown in an overlay (not saved)
+let confirmRestart = false; // second step of "Reiniciar examen" in the finish dialog
+let runSince = null; // when the exam clock last started running in this page (it pauses while the page is closed)
 
 // ---------------- boot ----------------
 const examId = new URLSearchParams(location.search).get('id');
-fetchExam(examId)
-    .then(loaded => {
-        exam = loaded;
-        document.title = exam.title + ' · Ludomatics';
-        state = Object.assign(freshState(), loadAttempt(exam.id, exam.questions.length) || {}, { showMap: false, confirming: false });
-        render();
+loadExamFile(examId)
+    .then(async loaded => {
+        if (loaded.kind === 'plain') return start(normalizeExam(loaded.raw, examId));
+        // Protected exam: reuse the password typed earlier in this tab, otherwise ask for it.
+        const remembered = sessionGet(passwordKey(examId));
+        if (remembered) {
+            try { return start(await unlockExam(loaded.file, remembered)); }
+            catch (e) { sessionSet(passwordKey(examId), null); }
+        }
+        showLock(loaded.file);
     })
     .catch(err => {
         const message = err instanceof ExamError ? err.message : 'Ocurrió un error al abrir el examen.';
@@ -24,9 +31,56 @@ fetchExam(examId)
             '<section class="panel">' +
             '<h1 class="page-title">Examen no disponible</h1>' +
             '<p class="pre">' + esc(message) + '</p>' +
-            '<div class="btn-row"><a class="btn primary" href="./">Ver exámenes</a></div>' +
+            '<div class="btn-row"><a class="btn primary" href="../">Ver exámenes</a></div>' +
             '</section>';
     });
+
+function start(loaded) {
+    exam = loaded;
+    document.title = exam.title + ' · Ludomatics';
+    state = Object.assign(freshState(), loadAttempt(exam.id, exam.questions.length) || {}, { showMap: false, confirming: false });
+    render({ focus: '#studentName' });
+}
+
+// ---------------- password screen ----------------
+const passwordKey = id => 'ludomatics.password.' + id;
+function sessionGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function sessionSet(k, v) { try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) { /* not available */ } }
+
+function showLock(file, error) {
+    const meta = file.meta || {};
+    document.title = (meta.title || 'Examen') + ' · Ludomatics';
+    app.innerHTML =
+        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor(meta.category) + '">← Exámenes</a>' +
+        '<p class="exam-title">' + esc(meta.title || 'Examen') + '</p></div></header>' +
+        '<form class="panel" id="lockForm" autocomplete="off">' +
+        '<h1 class="page-title">Examen protegido</h1>' +
+        '<p class="muted">Escribe la contraseña que te dio tu profesor para abrir el examen.</p>' +
+        '<div class="field"><label for="examPassword">Contraseña</label>' +
+        '<input id="examPassword" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>' +
+        (error ? '<p class="error" role="alert">' + esc(error) + '</p>' : '') + '</div>' +
+        '<div class="btn-row"><button class="btn primary" type="submit" id="unlockBtn">Abrir examen</button></div>' +
+        '</form>';
+    const form = document.getElementById('lockForm');
+    const input = document.getElementById('examPassword');
+    input.focus();
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const password = input.value;
+        if (!password) return;
+        const btn = document.getElementById('unlockBtn');
+        btn.disabled = true;
+        btn.textContent = 'Abriendo…';
+        try {
+            const unlocked = await unlockExam(file, password);
+            sessionSet(passwordKey(unlocked.id), password);
+            start(unlocked);
+        } catch (err) {
+            if (!(err instanceof ExamError)) console.error(err);
+            showLock(file, err instanceof ExamError ? err.message : 'No se pudo abrir el examen.');
+        }
+    });
+}
 
 // ---------------- state ----------------
 function freshState() {
@@ -38,11 +92,16 @@ function freshState() {
         showMap: false,
         confirming: false,
         startedAt: null,
-        finishedAt: null
+        finishedAt: null,
+        elapsedMs: 0,       // time spent answering; only counts while the exam page is open
+        timerHidden: false,
+        timeUp: false,
+        score: null         // saved at grading so the catalog can show it
     };
 }
 
 function persist() {
+    foldClock();
     const { showMap, confirming, ...saved } = state;
     storageOk = saveAttempt(exam.id, saved);
 }
@@ -61,15 +120,70 @@ function esc(s) {
     return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// ---------------- timer ----------------
+const limitMs = () => exam.durationMinutes * 60000;
+const elapsedMs = () => state.elapsedMs + (runSince ? Date.now() - runSince : 0);
+
+// Move the running time into state.elapsedMs (called before every save).
+function foldClock() {
+    if (!runSince) return;
+    const now = Date.now();
+    state.elapsedMs += now - runSince;
+    runSince = now;
+}
+
+// The clock runs only while answering (not on the start screen, results or review).
+function syncClockToView() {
+    if (state.view === 'quiz' && !runSince) runSince = Date.now();
+    if (state.view !== 'quiz' && runSince) { foldClock(); runSince = null; }
+}
+
+function formatDuration(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+    return h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+}
+
+function timerHtml() {
+    const left = limitMs() - elapsedMs();
+    const over = left <= 0;
+    if (state.timerHidden) {
+        return '<div class="timer"><button class="btn ghost small-btn" data-act="toggle-timer">Mostrar tiempo</button></div>';
+    }
+    return '<div class="timer' + (over ? ' over' : '') + '" role="timer">' +
+        '<span class="timer-label">' + (over ? 'Tiempo agotado' : 'Tiempo restante') + '</span>' +
+        '<span class="timer-value" id="timerValue">' + (over ? '+' + formatDuration(-left) : formatDuration(left)) + '</span>' +
+        '<button class="btn ghost small-btn" data-act="toggle-timer">Ocultar</button></div>';
+}
+
+let tickCount = 0;
+setInterval(() => {
+    if (!exam || state.view !== 'quiz') return;
+    const left = limitMs() - elapsedMs();
+    if (left <= 0 && !state.timeUp) {
+        // Time is up: show the clock (even if hidden) and keep letting them answer.
+        set({ timeUp: true, timerHidden: false });
+        return;
+    }
+    const el = document.getElementById('timerValue');
+    if (el) el.textContent = left > 0 ? formatDuration(left) : '+' + formatDuration(-left);
+    if (++tickCount % 10 === 0) persist();
+}, 1000);
+
+// Save the clock when the page goes away, so closing it pauses the timer at the right second.
+addEventListener('pagehide', () => { if (exam) persist(); });
+document.addEventListener('visibilitychange', () => { if (exam && document.visibilityState === 'hidden') persist(); });
+
 // ---------------- render ----------------
 function render(opts = {}) {
+    syncClockToView();
     let html = topbar();
     if (state.view === 'start') html += startView();
     else if (state.view === 'quiz' || state.view === 'review') html += quizView();
     else html += resultsView();
     app.innerHTML = html;
 
-    const overlayOpen = (state.showMap || state.confirming) && (state.view === 'quiz' || state.view === 'review');
+    const overlayOpen = (state.showMap || state.confirming || zoom) && (state.view === 'quiz' || state.view === 'review');
     document.body.style.overflow = overlayOpen ? 'hidden' : '';
 
     typeset(app);
@@ -80,11 +194,21 @@ function render(opts = {}) {
     }
 }
 
+function catalogHrefFor(category) {
+    // Back to the catalog an exam belongs to (/universidad/, /bachillerato/), or the home page.
+    // Relative to /interactive/, because exam pages load the engine through <base href="../interactive/">.
+    if (!category) return '../';
+    return '../' + category.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '/';
+}
+const catalogHref = () => catalogHrefFor(exam.category);
+
 function topbar() {
-    return '<header class="topbar">' +
-        '<a class="back-link" href="./">← Exámenes</a>' +
+    return '<header class="topbar"><div class="topbar-main">' +
+        // No way out to the catalog while answering: keeps students focused.
+        (state.view === 'start' || state.view === 'results' ? '<a class="back-link" href="' + catalogHref() + '">← Exámenes</a>' : '') +
         '<p class="exam-title">' + esc(exam.title) + '</p>' +
         (storageOk ? '' : '<p class="save-warning">Tu progreso no se guardará si recargas la página.</p>') +
+        '</div>' + (state.view === 'quiz' ? timerHtml() : '') +
         '</header>';
 }
 
@@ -96,8 +220,10 @@ function startView() {
         actions = '<p class="resume-note">Este examen ya fue calificado en este navegador.</p>' +
             '<div class="btn-row"><button class="btn primary" data-act="show-results">Ver resultados</button>' +
             '<button class="btn" data-act="restart">Nuevo intento</button></div>';
-    } else if (answeredCount() > 0) {
-        actions = '<p class="resume-note">Hay un intento guardado: <strong>' + answeredCount() + ' de ' + exam.questions.length + '</strong> preguntas respondidas.</p>' +
+    } else if (answeredCount() > 0 || state.startedAt) {
+        const left = limitMs() - state.elapsedMs;
+        actions = '<p class="resume-note">Hay un intento guardado: <strong>' + answeredCount() + ' de ' + exam.questions.length + '</strong> preguntas respondidas · ' +
+            (left > 0 ? 'quedan <strong>' + formatDuration(left) + '</strong>' : 'tiempo agotado') + '.</p>' +
             '<div class="btn-row"><button class="btn primary" data-act="begin">Continuar</button>' +
             '<button class="btn" data-act="restart">Empezar de nuevo</button></div>';
     } else {
@@ -105,13 +231,20 @@ function startView() {
     }
     return '<section class="panel">' +
         '<h1 class="page-title">' + esc(exam.title) + '</h1>' +
-        '<p class="muted">' + exam.questions.length + ' preguntas de opción múltiple · ' + exam.sections.length + ' secciones</p>' +
+        '<p class="muted">' + exam.questions.length + ' preguntas de opción múltiple · ' + exam.sections.length + ' secciones · ' + durationText() + '</p>' +
         '<ul class="section-list">' + sections + '</ul>' +
         '<div class="field"><label for="studentName">Tu nombre</label>' +
         '<input id="studentName" type="text" autocomplete="off" placeholder="Ingresa tu nombre" value="' + esc(state.name) + '">' +
         (nameError ? '<p class="error">' + esc(nameError) + '</p>' : '') + '</div>' +
         actions +
+        '<p class="muted small">El tiempo empieza a correr al comenzar y se pausa si cierras la página.</p>' +
         '</section>';
+}
+
+function durationText() {
+    const m = exam.durationMinutes;
+    if (m % 60 === 0) return m / 60 + (m === 60 ? ' hora' : ' horas');
+    return m + ' minutos';
 }
 
 function ticks() {
@@ -160,8 +293,16 @@ function quizView() {
         ? '<figure class="figure"><img src="' + esc(q.image) + '" alt="Figura de la pregunta ' + q.number + '"></figure>'
         : '';
 
+    // Shared reading passage (e.g. one text for questions 74–78), collapsible so it doesn't bury the question.
+    const p = q.passage ? exam.passages[q.passage] : null;
+    const passage = p
+        ? '<details class="passage-box" open><summary>' + esc(p.intro || 'Lectura') + '</summary>' +
+          '<div class="passage-body">' + (p.title ? '<h3>' + esc(p.title) + '</h3>' : '') + p.html + '</div></details>'
+        : '';
+
     const card = '<article class="qcard">' +
         '<div class="qhead"><span class="qnum">' + q.number + '.</span><span class="chip">' + esc(sectionOf(i).title) + '</span></div>' +
+        passage +
         '<div class="qtext" id="qtext">' + q.text + '</div>' + figure +
         '<ul class="options" role="radiogroup" aria-labelledby="qtext">' + options + '</ul>' + verdict +
         '</article>';
@@ -180,7 +321,14 @@ function quizView() {
     const map = state.showMap ? '<div class="overlay" data-overlay>' + mapPanel(review, true) + '</div>' : '';
     const confirm = state.confirming ? confirmDialog() : '';
 
-    return progress + reviewBar + card + nav + map + confirm;
+    const zoomed = zoom
+        ? '<div class="overlay" data-overlay><section class="panel dialog image-dialog" role="dialog" aria-modal="true" aria-labelledby="zoomTitle">' +
+          '<div class="dialog-head"><h2 id="zoomTitle">' + esc(zoom.title) + '</h2>' +
+          '<button class="btn ghost close-btn" data-act="close-zoom" aria-label="Cerrar">×</button></div>' +
+          '<div class="image-scroll"><img src="' + esc(zoom.src) + '" alt="' + esc(zoom.title) + '"></div></section></div>'
+        : '';
+
+    return progress + reviewBar + card + nav + map + confirm + zoomed;
 }
 
 function mapPanel(review, inOverlay) {
@@ -210,9 +358,17 @@ function mapPanel(review, inOverlay) {
 function confirmDialog() {
     const missing = missingQuestions();
     const total = exam.questions.length;
-    let title, body, actions;
-    if (missing.length) {
-        const cells = '<div class="cells">' + missing.map(i =>
+    let title, body, actions, foot = '';
+    if (confirmRestart) {
+        // Second confirmation: say exactly what will be lost.
+        const answered = answeredCount();
+        title = '¿Reiniciar el examen?';
+        body = '<p>Se borrarán tus <strong>' + answered + ' ' + (answered === 1 ? 'respuesta' : 'respuestas') + '</strong> y el tiempo transcurrido. ' +
+            'Esta acción no se puede deshacer.</p>';
+        actions = '<button class="btn danger" data-act="confirm-restart">Sí, borrar y reiniciar</button>' +
+            '<button class="btn" data-act="cancel-restart">No, volver</button>';
+    } else if (missing.length) {
+        const cells = '<div class="cells cells-scroll">' + missing.map(i =>
             '<button class="cell" data-go="' + i + '" aria-label="Ir a la pregunta ' + (i + 1) + '">' + (i + 1) + '</button>').join('') + '</div>';
         title = 'Faltan preguntas por responder';
         body = '<p>Para calificar necesitas responder todas las preguntas. Te faltan <strong>' + missing.length + '</strong> de ' + total + ':</p>' +
@@ -225,10 +381,13 @@ function confirmDialog() {
         actions = '<button class="btn primary" data-act="grade">Terminar y calificar</button>' +
             '<button class="btn" data-act="cancel-finish">Seguir respondiendo</button>';
     }
+    if (!confirmRestart) {
+        foot = '<div class="dialog-foot"><button class="btn danger-ghost small-btn" data-act="ask-restart">Reiniciar examen</button></div>';
+    }
     return '<div class="overlay" data-overlay><section class="panel dialog" id="confirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" tabindex="-1">' +
         '<div class="dialog-head"><h2 id="confirmTitle">' + title + '</h2>' +
         '<button class="btn ghost close-btn" data-act="cancel-finish" aria-label="Cerrar">×</button></div>' +
-        body + '<div class="btn-row">' + actions + '</div></section></div>';
+        body + '<div class="btn-row">' + actions + '</div>' + foot + '</section></div>';
 }
 
 function resultsView() {
@@ -245,6 +404,8 @@ function resultsView() {
         '<h1 class="page-title">' + heading + '</h1>' +
         '<div class="score-wrap"><span class="score">' + correctCount + '<small> / ' + total + '</small></span>' +
         '<span class="pct">' + pct + '% de aciertos</span></div>' +
+        '<p class="muted">Tiempo utilizado: ' + formatDuration(state.elapsedMs) +
+        (state.elapsedMs > limitMs() ? ' (' + formatDuration(state.elapsedMs - limitMs()) + ' después del límite)' : '') + '</p>' +
         '<div class="table-wrap"><table class="breakdown"><thead><tr><th>Sección</th><th>Aciertos</th><th></th><th>%</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>' +
         '<div class="btn-row"><button class="btn primary" data-act="review">Revisar respuestas</button>' +
@@ -263,6 +424,7 @@ window.addEventListener('load', () => { if (exam) typeset(app); });
 // ---------------- actions ----------------
 function go(i) {
     if (i < 0 || i >= exam.questions.length) return;
+    zoom = null;
     set({ current: i, showMap: false, confirming: false }, { scrollTop: true });
 }
 
@@ -286,12 +448,22 @@ function begin() {
 }
 
 function closeMap() { set({ showMap: false }, { focus: '[data-act="map"]' }); }
-function closeConfirm() { set({ confirming: false }, { focus: '[data-act="finish"]' }); }
-function closeOverlays() { if (state.confirming) closeConfirm(); else closeMap(); }
+function closeConfirm() { confirmRestart = false; set({ confirming: false }, { focus: '[data-act="finish"]' }); }
+function closeZoom() { zoom = null; render(); }
+function closeOverlays() { if (zoom) closeZoom(); else if (state.confirming) closeConfirm(); else closeMap(); }
 
 app.addEventListener('click', e => {
     if (!exam) return;
     if (e.target.matches('[data-overlay]')) { closeOverlays(); return; }
+
+    // Links to reference images (e.g. the periodic table) open in an overlay so the exam stays on screen.
+    const ref = e.target.closest('.qtext a[href], .passage-body a[href]');
+    if (ref && /^data:image\/|\.(png|jpe?g|gif|svg|webp)$/i.test(ref.getAttribute('href'))) {
+        e.preventDefault();
+        zoom = { src: ref.getAttribute('href'), title: ref.dataset.title || ref.textContent.replace(/^Ver\s+/i, '') };
+        render({ focus: '[data-act="close-zoom"]' });
+        return;
+    }
 
     const opt = e.target.closest('[data-opt]');
     if (opt && !opt.disabled) { choose(opt.dataset.opt); return; }
@@ -311,6 +483,7 @@ app.addEventListener('click', e => {
         case 'restart':
             // Shared devices: a new attempt is a new person, so the name is cleared too.
             clearAttempt(exam.id);
+            runSince = null;
             state = freshState();
             nameError = '';
             persist();
@@ -320,11 +493,26 @@ app.addEventListener('click', e => {
         case 'next': go(state.current + 1); break;
         case 'map': set({ showMap: true }, { focus: '[data-act="close-map"]' }); break;
         case 'close-map': closeMap(); break;
+        case 'close-zoom': closeZoom(); break;
+        case 'toggle-timer': set({ timerHidden: !state.timerHidden }, { focus: '[data-act="toggle-timer"]' }); break;
         case 'finish': set({ confirming: true, showMap: false }, { focus: '#confirmDialog' }); break;
         case 'cancel-finish': closeConfirm(); break;
+        case 'ask-restart': confirmRestart = true; render({ focus: '#confirmDialog' }); break;
+        case 'cancel-restart': confirmRestart = false; render({ focus: '[data-act="ask-restart"]' }); break;
+        case 'confirm-restart': {
+            // Same student starting over: keep the name, wipe answers and time.
+            const name = state.name;
+            clearAttempt(exam.id);
+            runSince = null;
+            confirmRestart = false;
+            state = Object.assign(freshState(), { name });
+            persist();
+            render({ focus: '#studentName', scrollTop: true });
+            break;
+        }
         case 'grade':
             if (missingQuestions().length) { set({ confirming: true }); break; }
-            set({ view: 'results', confirming: false, finishedAt: Date.now() }, { scrollTop: true });
+            set({ view: 'results', confirming: false, finishedAt: Date.now(), score: grade(exam, state.answers).correctCount }, { scrollTop: true });
             break;
         case 'show-results': set({ view: 'results', showMap: false }, { scrollTop: true }); break;
         case 'review': set({ view: 'review', current: 0, showMap: false }, { scrollTop: true }); break;
@@ -340,7 +528,7 @@ document.addEventListener('keydown', e => {
     if (!exam || (state.view !== 'quiz' && state.view !== 'review')) return;
     if (e.target.matches && e.target.matches('input, textarea')) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (state.showMap || state.confirming) {
+    if (state.showMap || state.confirming || zoom) {
         if (e.key === 'Escape') closeOverlays();
         return;
     }
