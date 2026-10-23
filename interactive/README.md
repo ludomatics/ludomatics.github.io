@@ -104,7 +104,8 @@ the questions, the answers or the figures. Students type the password once per b
 { "id": "unam-2021-area-1", "title": "UNAM 2021 · Área 1", "category": "Universidad", "questionCount": 120 }
 ```
 
-`category` decides which catalog shows it.
+`category` decides which catalog shows it. Add `"hidden": true` to keep it out of the catalogs; it still opens with its direct
+link, e.g. `/universidad/examen.html?id=<exam-id>` (hidden is not secret: use a password for that).
 
 3. Encrypt it (needs Node 18 or newer; it asks for the password twice):
 

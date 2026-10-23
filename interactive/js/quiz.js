@@ -392,6 +392,9 @@ function confirmDialog() {
 
 function resultsView() {
     const { correctCount, bySection } = grade(exam, state.answers);
+    // Keep the saved score in line with the current answer key (e.g. after a corrected answer is published),
+    // so the catalog's "Calificado" label matches this page.
+    if (state.finishedAt && state.score !== correctCount) { state.score = correctCount; persist(); }
     const total = exam.questions.length;
     const pct = Math.round((correctCount / total) * 100);
     const rows = bySection.map(s => {
@@ -409,7 +412,9 @@ function resultsView() {
         '<div class="table-wrap"><table class="breakdown"><thead><tr><th>Sección</th><th>Aciertos</th><th></th><th>%</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table></div>' +
         '<div class="btn-row"><button class="btn primary" data-act="review">Revisar respuestas</button>' +
+        '<button class="btn" data-act="download-card" id="cardBtn">Descargar resultado</button>' +
         '<button class="btn" data-act="restart">Nuevo intento</button></div>' +
+        '<p class="muted small" id="cardNote" aria-live="polite"></p>' +
         '</section>' + mapPanel(true, false);
 }
 
@@ -445,6 +450,39 @@ function begin() {
     }
     nameError = '';
     set({ name, view: 'quiz', startedAt: state.startedAt || Date.now() }, { scrollTop: true });
+}
+
+// Results image: drawn in the browser, shared (phones) or downloaded (computers).
+async function downloadCard(btn) {
+    const note = document.getElementById('cardNote');
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Generando imagen…';
+    try {
+        const { drawScoreCard, saveScoreCard } = await import('./scorecard.js');
+        const { correctCount, bySection } = grade(exam, state.answers);
+        const over = state.elapsedMs - limitMs();
+        const canvas = drawScoreCard({
+            examTitle: exam.title,
+            name: state.name,
+            correct: correctCount,
+            total: exam.questions.length,
+            bySection,
+            elapsed: formatDuration(state.elapsedMs),
+            overtime: over > 0 ? formatDuration(over) : '',
+            date: new Date(state.finishedAt || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+        });
+        const slug = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const filename = ['resultado', exam.id, slug(state.name)].filter(Boolean).join('-') + '.png';
+        const outcome = await saveScoreCard(canvas, filename, 'Resultado · ' + exam.title);
+        if (note) note.textContent = outcome === 'downloaded' ? 'Se descargó la imagen ' + filename + '.' : outcome === 'shared' ? 'Imagen lista para compartir.' : '';
+    } catch (err) {
+        console.error(err);
+        if (note) note.textContent = 'No se pudo crear la imagen. Intenta de nuevo.';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
 }
 
 function closeMap() { set({ showMap: false }, { focus: '[data-act="map"]' }); }
@@ -516,6 +554,7 @@ app.addEventListener('click', e => {
             break;
         case 'show-results': set({ view: 'results', showMap: false }, { scrollTop: true }); break;
         case 'review': set({ view: 'review', current: 0, showMap: false }, { scrollTop: true }); break;
+        case 'download-card': downloadCard(btn); break;
     }
 });
 

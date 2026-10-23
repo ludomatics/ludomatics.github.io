@@ -47,7 +47,9 @@ fetch(new URL('exams/index.json', engine), { cache: 'no-cache' })
         return r.json();
     })
     .then(({ exams = [] }) => {
-        const list = onlyCategory ? exams.filter(e => same(e.category || '', onlyCategory)) : exams;
+        // "hidden": true keeps an exam out of the catalogs; it still opens with its direct link.
+        const visible = exams.filter(e => !e.hidden);
+        const list = onlyCategory ? visible.filter(e => same(e.category || '', onlyCategory)) : visible;
         if (!list.length) {
             container.innerHTML = '<p class="muted">Todavía no hay exámenes interactivos' +
                 (onlyCategory ? ' de ' + esc(onlyCategory.toLowerCase()) : '') + '.</p>';

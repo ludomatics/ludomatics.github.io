@@ -1,6 +1,14 @@
 {
   "exams": [
     {
+      "id": "examen-ejemplo",
+      "title": "Examen de prueba",
+      "category": "Universidad",
+      "questionCount": 6,
+      "description": "6 preguntas de ejemplo y 15 minutos, sin contraseña. Oculto: se abre en /universidad/examen.html?id=examen-ejemplo",
+      "hidden": true
+    },
+    {
       "id": "unam-2021-area-1",
       "title": "UNAM 2021 · Área 1",
       "category": "Universidad",

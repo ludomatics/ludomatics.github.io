@@ -1,0 +1,54 @@
+{
+  "id": "examen-ejemplo",
+  "title": "Examen de prueba",
+  "category": "Universidad",
+  "durationMinutes": 15,
+  "numberOfOptions": 4,
+  "sections": [
+    {
+      "title": "Física",
+      "questions": [
+        {
+          "text": "Un automóvil parte del reposo y acelera de manera uniforme a $2\\,\\dfrac{\\text{m}}{\\text{s}^2}$. ¿Qué distancia recorre en $5\\,\\text{s}$?",
+          "options": ["$10\\,\\text{m}$", "$25\\,\\text{m}$", "$50\\,\\text{m}$", "$20\\,\\text{m}$"],
+          "answer": "B"
+        },
+        {
+          "text": "¿Cuál de las siguientes magnitudes se mide en joules?",
+          "options": ["Potencia", "Fuerza", "Trabajo", "Presión"],
+          "answer": "C"
+        }
+      ]
+    },
+    {
+      "title": "Matemáticas",
+      "questions": [
+        {
+          "text": "Simplifica la expresión $\\dfrac{x^2-9}{x-3}$.",
+          "options": ["$x-3$", "$x+3$", "$x^2+3$", "$3$"],
+          "answer": "B"
+        },
+        {
+          "text": "¿Cuál es la pendiente de la recta que pasa por los puntos $(1,\\,2)$ y $(3,\\,8)$?",
+          "options": ["$2$", "$3$", "$4$", "$6$"],
+          "answer": "B"
+        }
+      ]
+    },
+    {
+      "title": "Español",
+      "questions": [
+        {
+          "text": "¿Qué figura retórica se presenta en el siguiente verso?<blockquote>Tus ojos son dos luceros.</blockquote>",
+          "options": ["Metáfora", "Hipérbole", "Anáfora", "Onomatopeya"],
+          "answer": "A"
+        },
+        {
+          "text": "¿Cuál de las siguientes palabras es esdrújula?",
+          "options": ["Camión", "Árbol", "Música", "Reloj"],
+          "answer": "C"
+        }
+      ]
+    }
+  ]
+}
