@@ -147,8 +147,9 @@ node tools/encrypt-exam.mjs exams-private/<exam-id>.json
 It checks the exam, embeds the images, writes `interactive/exams/<exam-id>.enc.json` and sets `questionCount` and
 `"protected": true` in `index.json`. Run it again after every edit to the source.
 
-The encryption step refuses an exam where a question has the wrong number of options, an invalid answer letter or a
-missing image, and says which question is wrong.
+The encryption step refuses an exam where a question has the wrong number of options, an invalid answer letter, a
+missing image or an image not written as `exams/<exam-id>/<file>` (that one would be left out of the encrypted
+file), and says which question is wrong.
 
 ## Publishing a new version
 

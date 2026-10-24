@@ -39,6 +39,22 @@
       "questionCount": 128,
       "description": "Examen muestra de la guía 2019 para la educación media superior.",
       "protected": true
+    },
+    {
+      "id": "unam-2024-bachillerato",
+      "title": "UNAM 2024 · Bachillerato",
+      "category": "Bachillerato",
+      "questionCount": 128,
+      "description": "Examen muestra de la guía 2024 para la educación media superior.",
+      "protected": true
+    },
+    {
+      "id": "unam-2020-bachillerato-guia",
+      "title": "UNAM 2020 · Bachillerato (guía)",
+      "category": "Bachillerato",
+      "questionCount": 128,
+      "description": "Examen muestra de la guía 2020 para la educación media superior.",
+      "protected": true
     }
   ]
 }

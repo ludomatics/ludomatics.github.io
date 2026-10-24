@@ -48,10 +48,28 @@ let exam;
 try { exam = normalizeExam(raw, raw.id); } catch (e) { fail(e.message); }
 if (!raw.id || !/^[a-z0-9-]+$/.test(raw.id)) fail('el examen necesita un "id" con minúsculas, números y guiones.');
 
+// Every image must be written as exams/<id>/<file>; anything else would be left out of the encrypted file.
+const IMAGE = /[^\s"'<>=()\\]+\.(?:png|jpe?g|gif|svg|webp)\b/gi;
+const ownImage = new RegExp('^exams/' + raw.id + '/[A-Za-z0-9._-]+$');
+const badRefs = [];
+const checkRefs = (where, value) => {
+    for (const ref of JSON.stringify(value).match(IMAGE) || []) {
+        if (!ownImage.test(ref)) badRefs.push(where + ': ' + ref);
+    }
+};
+for (const [key, passage] of Object.entries(raw.passages || {})) checkRefs('lectura "' + key + '"', passage);
+let number = 0;
+for (const section of raw.sections || []) {
+    for (const question of section.questions || []) checkRefs('pregunta ' + ++number, question);
+}
+if (badRefs.length) {
+    fail('estas imágenes deben escribirse como exams/' + raw.id + '/<archivo>:\n  ' + badRefs.join('\n  '));
+}
+
 // Embed images referenced as exams/<id>/<file> (paths relative to /interactive/).
 let text = JSON.stringify(raw);
 const missing = [];
-const refs = [...new Set(text.match(/exams\/[a-z0-9-]+\/[A-Za-z0-9._-]+\.(?:png|jpe?g|gif|svg|webp)/g) || [])];
+const refs = [...new Set(text.match(new RegExp('exams/' + raw.id + '/[A-Za-z0-9._-]+\\.(?:png|jpe?g|gif|svg|webp)', 'g')) || [])];
 for (const ref of refs) {
     const file = join(dirname(sourcePath), ref.slice('exams/'.length));
     if (!existsSync(file)) { missing.push(ref); continue; }
