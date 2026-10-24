@@ -48,8 +48,9 @@ interactive/
 │   ├── exam.js         # loads, decrypts and validates an exam; grading
 │   ├── profile.js      # profile (level, name, goal), history, remembered passwords
 │   ├── storage.js      # localStorage (personal) or sessionStorage (guest)
-│   ├── scorecard.js    # downloadable results image
+│   ├── scorecard.js    # downloadable results and progress images
 │   ├── stats.js        # progress numbers: per-subject accuracy, goal status, score series
+│   ├── backup.js       # backup file: build, check, restore
 │   └── dashboard.js    # the "Historial" and "Tu progreso" sections
 └── exams/
     ├── index.json          # which exams appear in the lists
@@ -170,6 +171,20 @@ Personal mode keeps everything in the browser's localStorage, on that device onl
 | `ludomatics.history` | one record per graded attempt: exam, date, score, goal, time, answers, per-section (with `subject`) |
 | `ludomatics.quiz.<exam-id>` | the current attempt of that exam (resumes after reloads) |
 | `ludomatics.password.<exam-id>` | the password of a protected exam, so it is not asked again |
+
+### Backup, progress image and home screen
+
+- **Backup**: "Editar perfil" → "Descargar respaldo" saves `ludomatics-respaldo-<name>-<date>.json` (format
+  `ludomatics-backup-v1`: every key above except `password.*`). "Restaurar respaldo" (also on the first onboarding
+  step, for a new device) shows what the file contains and replaces this device's data after confirming; passwords
+  already saved on the device are kept.
+- **Progress image**: "Descargar progreso" (next to "Editar perfil", once there is a graded exam) draws a PNG with
+  totals, the goal, results over time and accuracy per subject (shared on phones, downloaded on computers).
+- **Keeping data**: the home page asks the browser for persistent storage (`navigator.storage.persist()`), so it is
+  not deleted on its own; browsers decide silently.
+- **Home screen**: `manifest.webmanifest` and `icons/` let phones add the site as an app. A one-time card on phones
+  explains how (dismissed with "Entendido", stored as `ludomatics.hint.homescreen`). On iPhone and iPad the
+  home-screen app keeps its own data, separate from Safari: move it with a backup.
 
 Guest mode uses the same names under `ludomatics.guest.` in sessionStorage, which the browser deletes when the tab
 closes ("Salir del modo invitado" deletes it right away). "Nuevo intento" clears only that exam's current attempt;

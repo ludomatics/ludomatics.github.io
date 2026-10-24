@@ -448,12 +448,11 @@ function confirmDialog() {
         body + '<div class="btn-row">' + actions + '</div>' + foot + '</section></div>';
 }
 
+// Only celebrates a reached goal: how far below it they fell can discourage students, so it isn't shown here.
 function goalLine(correct, total) {
     const g = goalText(correct, total);
-    if (!g) return '';
-    return '<p class="goal-result ' + (g.hit ? 'hit' : 'miss') + '">' + (g.hit
-        ? '✓ Alcanzaste tu meta de ' + g.goal + ' aciertos.'
-        : 'Tu meta: ' + g.goal + ' aciertos. Te faltaron ' + g.missing + '.') + '</p>';
+    if (!g || !g.hit) return '';
+    return '<p class="goal-result hit">✓ Alcanzaste tu meta de ' + g.goal + ' aciertos.</p>';
 }
 
 // "Nuevo intento" logs a new score: the history keeps every graded attempt, only the current answers are cleared.
@@ -479,16 +478,16 @@ function resultsView() {
         return '<tr><td>' + esc(s.title) + '</td><td class="num">' + s.correct + ' / ' + s.total + '</td>' +
             '<td class="bar-cell"><div class="bar"><span style="width:' + p + '%"></span></div></td><td class="num">' + p + '%</td></tr>';
     }).join('');
-    const heading = state.name ? esc(state.name) + ', este es tu resultado' : 'Tu resultado';
+    const heading = state.name ? esc(state.name) : 'Tu resultado';
     const when = new Date(state.finishedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
     const pastNote = past
-        ? '<p class="past-note">Resultado del ' + when + '</p>' +
-          (past.correct !== correctCount
+        ? (past.correct !== correctCount
             ? '<p class="muted small">En tu historial quedó con ' + past.correct + ' aciertos; la clave de respuestas se corrigió después, así que aquí se califica con la clave actual.</p>'
             : '')
         : '';
     return '<section class="panel">' + pastNote +
-        '<h1 class="page-title">' + heading + '</h1>' +
+        '<div class="result-head"><h1 class="page-title">' + heading + '</h1>' +
+        (state.finishedAt ? '<p class="muted result-date">' + when + '</p>' : '') + '</div>' +
         '<div class="score-wrap"><span class="score">' + correctCount + '<small> / ' + total + '</small></span>' +
         '<span class="pct">' + pct + '% de aciertos</span></div>' +
         goalLine(correctCount, total) +

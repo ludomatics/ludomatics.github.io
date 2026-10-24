@@ -75,3 +75,41 @@ export function allAttempts() {
         return [];
     }
 }
+
+// ---------------- whole-device data (backup and restore) ----------------
+
+// Every saved value in this mode, as { name: value } (names without the prefix).
+export function allEntries() {
+    const store = backend();
+    const out = {};
+    if (!store) return out;
+    try {
+        Object.keys(store).filter(k => k.startsWith(PREFIX)).forEach(k => {
+            try { out[k.slice(PREFIX.length)] = JSON.parse(store.getItem(k)); } catch (e) { /* skip unreadable */ }
+        });
+    } catch (e) { /* ignore */ }
+    return out;
+}
+
+// Replaces every saved value except the ones `keep(name)` returns true for. Returns true when all were saved.
+export function replaceAll(entries, keep = () => false) {
+    const store = backend();
+    if (!store) return false;
+    try {
+        Object.keys(store).filter(k => k.startsWith(PREFIX) && !keep(k.slice(PREFIX.length))).forEach(k => store.removeItem(k));
+    } catch (e) { return false; }
+    return Object.entries(entries).every(([name, value]) => setJSON(name, value));
+}
+
+// Asks the browser not to delete this site's data on its own (e.g. Safari after 7 days without visits,
+// or when the device is low on space). Silent: if the browser says no, nothing changes.
+export async function requestPersistence() {
+    if (MODE !== 'personal') return false;
+    try {
+        if (!(navigator.storage && navigator.storage.persist)) return false;
+        if (await navigator.storage.persisted()) return true;
+        return await navigator.storage.persist();
+    } catch (e) {
+        return false;
+    }
+}

@@ -61,9 +61,8 @@ function goalCard(history) {
             '<div class="btn-row"><button class="btn primary" data-act="edit-goal">Define tu meta</button></div></section>';
     }
     const fill = Math.min(100, (g.latest / g.goal) * 100);
-    const message = g.reached
-        ? '<p class="goal-result hit">✓ Tu último resultado alcanzó tu meta.</p>'
-        : '<p class="goal-result miss">Te faltan <strong>' + (g.goal - g.latest) + '</strong> aciertos para tu meta.</p>';
+    // Only a reached goal gets a message: how far below it they are can discourage students.
+    const message = g.reached ? '<p class="goal-result hit">✓ Tu último resultado alcanzó tu meta.</p>' : '';
     return '<section class="panel goal-card"><h2 class="dash-h">Tu meta</h2>' +
         '<p class="goal-big"><strong>' + g.goal + '</strong> de ' + g.total + ' aciertos <span class="muted">(' + Math.round(g.goalPct) + '%)</span></p>' +
         '<div class="goal-bar" role="img" aria-label="Último resultado: ' + g.latest + ' de ' + g.goal + ' aciertos de tu meta">' +
@@ -152,7 +151,7 @@ export function historySection(history, showAll) {
     const shown = showAll ? all : all.slice(0, HISTORY_PREVIEW);
     const cards = shown.map(r => {
         const goal = typeof r.goal === 'number'
-            ? (r.correct >= r.goal ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '<span class="goal-miss">A ' + (r.goal - r.correct) + ' de tu meta</span>')
+            ? (r.correct >= r.goal ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '')
             : '';
         const body = '<span class="h-title"><strong>' + esc(r.title) + '</strong><span class="muted small">' + date(r.at) + '</span></span>' +
             '<span class="h-score"><span><strong>' + r.correct + '</strong> / ' + r.total + ' <span class="muted small">(' + Math.round(r.pct) + '%)</span></span>' + goal + '</span>';

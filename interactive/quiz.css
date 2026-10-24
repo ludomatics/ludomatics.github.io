@@ -377,3 +377,20 @@ fieldset.field legend { margin-bottom: 6px; padding: 0; font-weight: bold; }
 /* history cards */
 .h-go { color: var(--faint); font-size: 1.4rem; line-height: 1; }
 .past-note { margin: 0; padding: 6px 12px; align-self: flex-start; border-radius: 4px; background: var(--blue-soft); color: var(--blue-dark); font-size: 0.9rem; font-weight: bold; }
+
+/* ---------- backup, notices, home-screen hint ---------- */
+.notice { margin: 4px 0 0; padding: 10px 14px; border-radius: 4px; background: #e8f5e9; color: var(--ok); font-weight: bold; }
+.dialog-section { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.dialog-section h3 { margin: 0; font-size: 1rem; }
+.dialog-section p { margin: 0; }
+.restore-summary { margin: 0; padding: 12px 16px; list-style: none; border-radius: 8px; background: var(--blue-tint); display: flex; flex-direction: column; gap: 4px; }
+.onb-restore { margin: 4px 0 0; }
+.hint-card {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;
+    margin: -12px 0 28px; padding: 14px 18px; border-left: 4px solid var(--blue); border-radius: 8px;
+    background: var(--card); box-shadow: var(--shadow);
+}
+.hint-card p { margin: 4px 0 0; color: var(--muted); }
+.hint-card > div:first-child { flex: 1 1 260px; }
+.result-head { display: flex; flex-direction: column; gap: 4px; }
+.result-head .page-title, .result-date { margin: 0; }
