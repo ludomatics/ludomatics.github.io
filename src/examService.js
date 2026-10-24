@@ -6,7 +6,7 @@ export class ExamService {
 
     /**
      * Load exam data from a JSON file
-     * @param {string} examName - The name of the exam file (without extension)
+     * @param {string} examPath - The exam's JSON file, relative to the page (e.g. "universidad-unam-2020-3.json")
      * @returns {Promise<Object>} The exam data
      */
     async loadExamData(examPath) {
@@ -21,65 +21,6 @@ export class ExamService {
             console.error('Error loading exam data:', error);
             throw error;
         }
-    }
-
-    /**
-     * Set exam data directly (for embedded data)
-     * @param {Object} data - The exam data object
-     */
-    setExamData(data) {
-        this.examData = data;
-        return this.examData;
-    }
-
-    /**
-     * Get the current exam data
-     * @returns {Object|null} The current exam data
-     */
-    getExamData() {
-        return this.examData;
-    }
-
-    /**
-     * Get exam data from embedded script or load from JSON
-     * @param {string} examName - The name of the exam file (without extension)
-     * @returns {Promise<Object>} The exam data
-     */
-    async getExamDataFromEmbeddedOrFile(examName) {
-        // First try to get embedded data from the current page
-        const embeddedData = this.getEmbeddedExamData();
-        if (embeddedData) {
-            this.setExamData(embeddedData);
-            return embeddedData;
-        }
-
-        // If no embedded data, try to load from JSON file
-        return await this.loadExamData(examName);
-    }
-
-    /**
-     * Extract embedded exam data from the current page
-     * @returns {Object|null} The embedded exam data or null if not found
-     */
-    getEmbeddedExamData() {
-        // Look for embedded exam data in script tags
-        const scripts = document.querySelectorAll('script');
-        for (const script of scripts) {
-            const content = script.textContent || script.innerHTML;
-            if (content.includes('examData') && content.includes('correctAnswers')) {
-                try {
-                    // Extract the examData object from the script
-                    const match = content.match(/const examData = ({[\s\S]*?});/);
-                    if (match) {
-                        const examDataString = match[1];
-                        return JSON.parse(examDataString);
-                    }
-                } catch (error) {
-                    console.warn('Could not parse embedded exam data:', error);
-                }
-            }
-        }
-        return null;
     }
 
     /**

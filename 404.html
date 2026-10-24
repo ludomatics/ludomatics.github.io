@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludomatics - Exámenes</title>
+    <!-- GitHub Pages serves this page for any address that doesn't exist.
+         Old answer-sheet links (/exams/<exam-id>.html) open the same sheet at /exams/examen.html?id=<exam-id>;
+         anything else goes to the exam list. -->
+    <script>
+        var old = location.pathname.match(/^\/exams\/([a-z0-9-]+)\.html$/);
+        location.replace(old && old[1] !== 'examen' ? '/exams/examen.html?id=' + old[1] : '/');
+    </script>
+</head>
+<body><p>Esta página no existe. <a href="/">Ir a Ludomatics</a></p></body>
+</html>

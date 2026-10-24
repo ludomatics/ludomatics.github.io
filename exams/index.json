@@ -1,0 +1,90 @@
+{
+  "categories": [
+    {
+      "title": "🎓 Exámenes Universidad",
+      "exams": [
+        {
+          "id": "universidad-ipn-2019-fmi",
+          "title": "Universidad IPN 2019 FMI"
+        },
+        {
+          "id": "universidad-ipn-2020",
+          "title": "Universidad IPN 2020"
+        },
+        {
+          "id": "universidad-uam-2011-cbi",
+          "title": "Universidad UAM 2011 CBI"
+        },
+        {
+          "id": "universidad-uam-simulacion-cad",
+          "title": "Universidad UAM simulacion CAD"
+        },
+        {
+          "id": "universidad-unam-2012-3",
+          "title": "Universidad UNAM 2012 3"
+        },
+        {
+          "id": "universidad-unam-2015-2",
+          "title": "Universidad UNAM 2015 2"
+        },
+        {
+          "id": "universidad-unam-2018-area3",
+          "title": "Universidad UNAM 2018 area3"
+        },
+        {
+          "id": "universidad-unam-2019-1",
+          "title": "Universidad UNAM 2019 1"
+        },
+        {
+          "id": "universidad-unam-2019-3",
+          "title": "Universidad UNAM 2019 3"
+        },
+        {
+          "id": "universidad-unam-2020-3",
+          "title": "Universidad UNAM 2020 3"
+        }
+      ]
+    },
+    {
+      "title": "🏫 Exámenes Bachillerato",
+      "exams": [
+        {
+          "id": "comipems-unam-2009",
+          "title": "COMIPEMS UNAM 2009"
+        },
+        {
+          "id": "comipems-unam-2012",
+          "title": "COMIPEMS UNAM 2012"
+        },
+        {
+          "id": "comipems-unam-2013",
+          "title": "COMIPEMS UNAM 2013"
+        },
+        {
+          "id": "comipems-unam-2016",
+          "title": "COMIPEMS UNAM 2016"
+        },
+        {
+          "id": "comipems-unam-2017",
+          "title": "COMIPEMS UNAM 2017"
+        },
+        {
+          "id": "comipems-unam-2019",
+          "title": "COMIPEMS UNAM 2019"
+        },
+        {
+          "id": "comipems-unam-2020",
+          "title": "COMIPEMS UNAM 2020"
+        },
+        {
+          "id": "comipems-unam-2024",
+          "title": "COMIPEMS UNAM 2024"
+        },
+        {
+          "id": "comipems-unam-simulacion",
+          "title": "COMIPEMS UNAM simulacion"
+        }
+      ]
+    }
+  ]
+}

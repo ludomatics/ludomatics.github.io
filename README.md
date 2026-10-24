@@ -1,181 +1,58 @@
-# AnSheet V3 - Simple Exam Generation System
+# Ludomatics - Exámenes
 
-A clean and simple exam generation system that creates individual HTML files for each exam from YAML configuration files.
+Answer sheets for admission exams (universidad and bachillerato), hosted on GitHub Pages. Students fill in their
+answers and get their score per section. There is no build step: everything is static files.
 
-## 🚀 Features
-
-- **Simple Build System**: Pure shell script, no Node.js required
-- **Multiple Exams**: Generate individual HTML files for each exam
-- **No Code Duplication**: Shared JavaScript files in `src/`
-- **Easy Maintenance**: Add new exams by creating YAML files
-- **User-Friendly Format**: YAML format for non-technical users
-- **Direct Access**: Each exam has its own URL
-- **Flexible Data Loading**: Exam data loaded from JSON files via ExamService
-- **Clean Architecture**: Separated source files from generated files
-- **Backward Compatibility**: Supports both embedded and external JSON data
+The interactive exams (student home, one question at a time, progress) live in [`interactive/`](interactive/README.md).
 
 ## 📁 Project Structure
 
 ```
-ansheetV3/
-├── index.html              # Auto-generated landing page
-├── source/                 # Source YAML files (from Firestore)
-│   ├── comipems-*.yaml     # COMIPEMS exam files
-│   └── universidad-*.yaml  # University exam files
-├── exams/                  # Generated HTML files
-├── templates/              # HTML templates + template YAML
-│   ├── exam-template.html  # Exam template
-│   ├── landing-template.html # Landing page template
-│   └── exam-template.yaml  # Template YAML for testing
-├── src/                    # Shared JavaScript files
-│   ├── config.js           # Configuration
-│   ├── utils.js            # Utilities
-│   ├── questionGenerator.js # Question generation
-│   ├── resultsRenderer.js  # Results display
-│   ├── inputListeners.js   # Event handlers
-│   ├── gradingService.js   # Grading logic
-│   └── examService.js      # Exam data loading and management
-
-├── build                   # Main build script (orchestrates the process)
-├── bin/                    # Build tools and scripts
-│   ├── build-html-exams.sh # HTML exam file generator
-│   ├── build-landing-page.sh # Landing page generator
-│   ├── yaml_to_json.py     # YAML to JSON converter
-│   └── embed_exam_data.py  # Exam data embedder
-├── index.css               # Stylesheet
-└── exam.css                # Exam-specific stylesheet
-```
-
-## 🛠️ Usage
-
-### 1. **Build All Exams**
-
-Generate HTML files for all exams in the `exams/` directory:
-
-```bash
-./build
-```
-
-**Note:** The build process processes all YAML files from the `source/` directory and converts them to JSON files.
-
-This will:
-- Convert YAML files to JSON (permanent assets)
-- Generate individual HTML files in the `exams/` directory
-- Each HTML file dynamically loads data from corresponding JSON files via ExamService
-- Replace the `examName` variable in each HTML file with the correct exam filename
-- Add auto-generated comments to prevent manual modifications
-- Generate a landing page (`index.html`) with all available exams organized by category
-- Keep JSON files as permanent assets for flexible data management
-
-### 2. **Add New Exams**
-
-You can create exam files in YAML format:
-
-Create a `.yaml` file in `source/` directory:
-
-```yaml
-# Exam Configuration
-title: Examen Universidad IPN 2025
-
-# Number of answer options
-numberOfOptions: 5
-
-# Exam sections
-sections:
-  - title: Matemáticas
-    start: 1
-    end: 20
-  - title: Física
-    start: 21
-    end: 40
-
-# Correct answers for each question
-correctAnswers:
-  1: A
-  2: B
-  3: C
-  4: D
-  5: E
-  6: A
-  7: B
-  # ... continue for all questions
-```
-
-### 3. **Run the Build Script**
-
-```bash
-./build
-```
-
-**Individual Build Steps:**
-- `./bin/build-html-exams.sh` - Generate only HTML exam files
-- `./bin/build-landing-page.sh` - Generate only the landing page
-
-### 4. **Access the Exam**
-
-```
-http://yourserver.com/exams/universidad-ipn-2025.html
-```
-
-## 🌐 URL Structure
-
-After building, you'll have:
-
-```
-yourserver.com/
+├── index.html          # Exam list, rendered from exams/index.json
+├── index.css           # Exam list styles
+├── exam.css            # Answer sheet styles
+├── 404.html            # Forwards old links (/exams/<exam-id>.html) to the answer sheet
 ├── exams/
-│   ├── universidad-unam-2025.html
-│   ├── universidad-uam-2025.html
-│   ├── universidad-ipn-2025.html
-│   └── bachillerato-comipems-2025.html
-└── ... (other project files)
+│   ├── index.json      # Which exams appear on the list, by category and in order
+│   ├── examen.html     # The answer sheet page: examen.html?id=<exam-id>
+│   └── <exam-id>.json  # One file per exam: title, sections and answer key
+└── src/                # Answer sheet code (loading, rendering, grading, results)
 ```
 
-## 📋 Exam File Naming Convention
+Each exam opens at `exams/examen.html?id=<exam-id>`, which loads `exams/<exam-id>.json`.
 
-Follow this pattern for exam YAML files:
+## ➕ Add an Exam
 
+1. Create `exams/<exam-id>.json` (lowercase letters, digits and dashes, e.g. `universidad-ipn-2025`):
+
+```json
+{
+    "title": "Universidad IPN 2025",
+    "sections": [
+        { "title": "Matemáticas", "start": 1, "end": 20 },
+        { "title": "Física", "start": 21, "end": 40 }
+    ],
+    "numberOfOptions": 5,
+    "correctAnswers": ["A", "B", "C", "D", "E", "..."]
+}
 ```
-{nivel}-{institucion}-{año}.yaml
+
+- `correctAnswers` has one letter per question, in order; its length is the number of questions.
+- `sections` give the first and last question number of each section.
+
+2. Add it to its category in `exams/index.json`:
+
+```json
+{ "id": "universidad-ipn-2025", "title": "Universidad IPN 2025" }
 ```
 
-### Examples:
-- `universidad-unam-2025.yaml`
-- `universidad-uam-2025.yaml`
-- `universidad-ipn-2025.yaml`
-- `bachillerato-comipems-2025.yaml`
+To fix an answer, edit the exam's JSON and push; students get it on their next visit.
 
-## 🔧 Development
+## 🔧 Testing Locally
 
-### Build Architecture
+The pages fetch JSON, so open them through a local server rather than as files:
 
-The build system is organized into modular components:
-
-- **Main Build Script** (`./build`): Orchestrates the complete build process
-- **HTML Exam Generator** (`./bin/build-html-exams.sh`): Converts YAML to JSON and generates HTML files
-- **Landing Page Generator** (`./bin/build-landing-page.sh`): Creates the main landing page
-- **YAML to JSON Converter** (`./bin/yaml_to_json.py`): Converts YAML exam files to JSON format
-- **Variable Replacer** (`./bin/embed_exam_data.py`): Replaces `examName` variable in HTML templates
-
-### Prerequisites
-- Bash shell
-- Web server (for testing)
-
-### Testing
 ```bash
-# Build all exams
-./build
-
-# Serve locally for testing
 python3 -m http.server 8000
+# http://localhost:8000/
 ```
-
-### How It Works
-
-1. **Template**: `templates/exam-template.html` contains the base HTML with embedded JavaScript and a placeholder `examName` variable
-2. **Build Process**: 
-   - Convert YAML files to JSON (permanent assets)
-   - Copy template to new HTML file
-   - Replace the `examName` variable with the correct exam filename
-   - Each HTML file dynamically loads exam data from its corresponding JSON file via ExamService
-3. **Result**: Each HTML file loads exam data dynamically and can be accessed directly via URL
