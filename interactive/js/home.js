@@ -14,7 +14,7 @@ let draft = null;           // onboarding answers so far: { step, level, name, g
 let editingGoal = false;    // goal overlay from "Tu progreso"
 let historyAll = false;     // "Ver todo" in Historial
 
-// A link like /interactive/?nivel=universidad (what /universidad/ redirects to) presets the level.
+// A link like /interactive/?nivel=universidad presets the level (the exam page uses it for links opened before onboarding).
 const params = new URLSearchParams(location.search);
 const presetLevel = LEVELS[params.get('nivel')] ? params.get('nivel') : null;
 // ?volver=<exam-id>: an exam link opened before onboarding; go back to it once the profile exists.

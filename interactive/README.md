@@ -36,9 +36,6 @@ Rules in personal mode:
 - "Empezar de nuevo" (in "Editar perfil", double confirmation) deletes the profile, history, attempts and saved
   passwords on that device and restarts onboarding.
 
-`/universidad/` and `/bachillerato/` (and their `examen.html`) are old addresses that redirect to `/interactive/`;
-on a first visit they preset the level and skip that question.
-
 ```
 interactive/
 ├── index.html          # student home (pending exams, history, progress) + onboarding
