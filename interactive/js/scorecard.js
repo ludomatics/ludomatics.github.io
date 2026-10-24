@@ -43,7 +43,7 @@ function roundRect(ctx, x, y, w, h, r) {
 
 const barColor = pct => (pct >= 70 ? C.ok : pct >= 50 ? C.mid : C.low);
 
-// data: { examTitle, name, correct, total, bySection: [{title, correct, total}], elapsed, overtime, date }
+// data: { examTitle, name, correct, total, bySection: [{title, correct, total}], elapsed, overtime, date, goal? }
 export function drawScoreCard(data) {
     const rowH = 74;
     const sectionsTop = 760;
@@ -94,6 +94,14 @@ export function drawScoreCard(data) {
     // time used
     ctx.fillStyle = C.muted; ctx.font = font(30);
     ctx.fillText('Tiempo utilizado: ' + data.elapsed + (data.overtime ? ' (+' + data.overtime + ' después del límite)' : ''), PAD, cardY + 390);
+
+    // goal (optional): { goal, hit, missing }
+    if (data.goal) {
+        ctx.font = font(30, 'bold');
+        ctx.fillStyle = data.goal.hit ? C.ok : C.ink;
+        ctx.fillText(data.goal.hit ? '✓ Meta alcanzada: ' + data.goal.goal + ' aciertos'
+            : 'Meta: ' + data.goal.goal + ' aciertos · faltaron ' + data.goal.missing, PAD, cardY + 440);
+    }
 
     // divider + section rows
     ctx.fillStyle = C.rule; ctx.fillRect(PAD, sectionsTop - 70, W - PAD * 2, 2);

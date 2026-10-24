@@ -51,8 +51,8 @@ export class ExamError extends Error {}
 
 // Input: { id, title, category?, durationMinutes? (default 180), numberOfOptions,
 //          passages?: { <key>: { intro?, title?, html } },
-//          sections: [{ title, questions: [{ text, options[], answer, image?, passage? }] }] }
-// Output: { id, title, letters, passages, sections: [{ title, start, end, count }], questions: [{ ..., number, sectionIndex }] }
+//          sections: [{ title, subject?, questions: [{ text, options[], answer, image?, passage? }] }] }
+// Output: { id, title, letters, passages, sections: [{ title, subject, start, end, count }], questions: [{ ..., number, sectionIndex }] }
 export function normalizeExam(raw, fallbackId) {
     const letters = 'ABCDEFGH'.slice(0, raw.numberOfOptions || 4).split('');
     const passages = raw.passages || {};
@@ -75,7 +75,7 @@ export function normalizeExam(raw, fallbackId) {
             }
             questions.push(Object.assign({}, q, { number, sectionIndex }));
         });
-        sections.push({ title: section.title, start, end: questions.length - 1, count: questions.length - start });
+        sections.push({ title: section.title, subject: section.subject || null, start, end: questions.length - 1, count: questions.length - start });
     });
 
     if (!questions.length) problems.push('El examen no tiene preguntas.');

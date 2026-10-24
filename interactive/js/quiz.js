@@ -1,6 +1,7 @@
 // Interactive exam: one question at a time, autosave, question map, results and review.
 import { loadExamFile, unlockExam, normalizeExam, grade, ExamError } from './exam.js';
-import { loadAttempt, saveAttempt, clearAttempt } from './storage.js';
+import { MODE, loadAttempt, saveAttempt, clearAttempt } from './storage.js';
+import { LEVELS, levelOfCategory, levelLocked, getProfile, goalFor, addToHistory, getPassword, rememberPassword, forgetPassword } from './profile.js';
 
 const app = document.getElementById('app');
 let exam = null;
@@ -15,12 +16,25 @@ let runSince = null; // when the exam clock last started running in this page (i
 const examId = new URLSearchParams(location.search).get('id');
 loadExamFile(examId)
     .then(async loaded => {
+        // Personal mode only shows exams of the student's level (guests may open any level).
+        const category = loaded.kind === 'plain' ? loaded.raw.category : (loaded.file.meta || {}).category;
+        const examLevel = levelOfCategory(category);
+        if (MODE === 'personal' && examLevel) {
+            const profile = getProfile();
+            if (!profile) {
+                // Exam link opened before onboarding: set up the profile (level preset), then come back here.
+                location.replace('./?nivel=' + examLevel + '&volver=' + encodeURIComponent(examId));
+                return;
+            }
+            if (profile.level !== examLevel) return showWrongLevel(examLevel, profile.level, loaded);
+        }
         if (loaded.kind === 'plain') return start(normalizeExam(loaded.raw, examId));
         // Protected exam: reuse the password typed earlier in this tab, otherwise ask for it.
-        const remembered = sessionGet(passwordKey(examId));
+        // Protected exam: personal devices remember the password; guests only for this tab.
+        const remembered = getPassword(examId);
         if (remembered) {
             try { return start(await unlockExam(loaded.file, remembered)); }
-            catch (e) { sessionSet(passwordKey(examId), null); }
+            catch (e) { forgetPassword(examId); }
         }
         showLock(loaded.file);
     })
@@ -39,19 +53,34 @@ function start(loaded) {
     exam = loaded;
     document.title = exam.title + ' · Ludomatics';
     state = Object.assign(freshState(), loadAttempt(exam.id, exam.questions.length) || {}, { showMap: false, confirming: false });
+    if (!state.name) state.name = profileName();
     render({ focus: '#studentName' });
 }
 
+// The name saved during onboarding (personal or guest), so students don't type it for every exam.
+const profileName = () => (getProfile() || {}).name || '';
+
+function showWrongLevel(examLevel, profileLevel, loaded) {
+    const title = loaded.kind === 'plain' ? loaded.raw.title : (loaded.file.meta || {}).title;
+    document.title = (title || 'Examen') + ' · Ludomatics';
+    app.innerHTML =
+        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">← Exámenes</a>' +
+        '<p class="exam-title">' + esc(title || 'Examen') + '</p></div></header>' +
+        '<section class="panel"><h1 class="page-title">Este examen es de ' + LEVELS[examLevel].label.toLowerCase() + '</h1>' +
+        '<p>Tu perfil es de <strong>' + LEVELS[profileLevel].label.toLowerCase() + '</strong>, así que este examen no está disponible para ti.</p>' +
+        '<p class="muted">' + (levelLocked()
+            ? 'Si necesitas otro nivel, usa «Empezar de nuevo» en «Editar perfil».'
+            : 'Si elegiste el nivel equivocado, puedes cambiarlo en «Editar perfil».') + '</p>' +
+        '<div class="btn-row"><a class="btn primary" href="' + catalogHrefFor() + '">Ir a mis exámenes</a></div></section>';
+}
+
 // ---------------- password screen ----------------
-const passwordKey = id => 'ludomatics.password.' + id;
-function sessionGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
-function sessionSet(k, v) { try { v === null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) { /* not available */ } }
 
 function showLock(file, error) {
     const meta = file.meta || {};
     document.title = (meta.title || 'Examen') + ' · Ludomatics';
     app.innerHTML =
-        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor(meta.category) + '">← Exámenes</a>' +
+        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">← Exámenes</a>' +
         '<p class="exam-title">' + esc(meta.title || 'Examen') + '</p></div></header>' +
         '<form class="panel" id="lockForm" autocomplete="off">' +
         '<h1 class="page-title">Examen protegido</h1>' +
@@ -73,7 +102,7 @@ function showLock(file, error) {
         btn.textContent = 'Abriendo…';
         try {
             const unlocked = await unlockExam(file, password);
-            sessionSet(passwordKey(unlocked.id), password);
+            rememberPassword(unlocked.id, password);
             start(unlocked);
         } catch (err) {
             if (!(err instanceof ExamError)) console.error(err);
@@ -194,13 +223,12 @@ function render(opts = {}) {
     }
 }
 
-function catalogHrefFor(category) {
-    // Back to the catalog an exam belongs to (/universidad/, /bachillerato/), or the home page.
-    // Relative to /interactive/, because exam pages load the engine through <base href="../interactive/">.
-    if (!category) return '../';
-    return '../' + category.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '/';
+function catalogHrefFor() {
+    // Back to the student's home: /interactive/ (personal) or /invitado/ (guest).
+    // Relative to /interactive/: the guest exam page loads the engine through <base href="../interactive/">.
+    return MODE === 'guest' ? '../invitado/' : './';
 }
-const catalogHref = () => catalogHrefFor(exam.category);
+const catalogHref = () => catalogHrefFor();
 
 function topbar() {
     return '<header class="topbar"><div class="topbar-main">' +
@@ -390,6 +418,14 @@ function confirmDialog() {
         body + '<div class="btn-row">' + actions + '</div>' + foot + '</section></div>';
 }
 
+function goalLine(correct, total) {
+    const g = goalText(correct, total);
+    if (!g) return '';
+    return '<p class="goal-result ' + (g.hit ? 'hit' : 'miss') + '">' + (g.hit
+        ? '✓ Alcanzaste tu meta de ' + g.goal + ' aciertos.'
+        : 'Tu meta: ' + g.goal + ' aciertos. Te faltaron ' + g.missing + '.') + '</p>';
+}
+
 function resultsView() {
     const { correctCount, bySection } = grade(exam, state.answers);
     // Keep the saved score in line with the current answer key (e.g. after a corrected answer is published),
@@ -407,6 +443,7 @@ function resultsView() {
         '<h1 class="page-title">' + heading + '</h1>' +
         '<div class="score-wrap"><span class="score">' + correctCount + '<small> / ' + total + '</small></span>' +
         '<span class="pct">' + pct + '% de aciertos</span></div>' +
+        goalLine(correctCount, total) +
         '<p class="muted">Tiempo utilizado: ' + formatDuration(state.elapsedMs) +
         (state.elapsedMs > limitMs() ? ' (' + formatDuration(state.elapsedMs - limitMs()) + ' después del límite)' : '') + '</p>' +
         '<div class="table-wrap"><table class="breakdown"><thead><tr><th>Sección</th><th>Aciertos</th><th></th><th>%</th></tr></thead>' +
@@ -452,6 +489,29 @@ function begin() {
     set({ name, view: 'quiz', startedAt: state.startedAt || Date.now() }, { scrollTop: true });
 }
 
+// One history record per graded attempt (personal mode only): the data behind the progress dashboard.
+function recordHistory(result, finishedAt) {
+    addToHistory({
+        examId: exam.id,
+        examTitle: exam.title,
+        category: exam.category,
+        finishedAt,
+        correct: result.correctCount,
+        total: exam.questions.length,
+        elapsedMs: state.elapsedMs,
+        goal: goalFor(exam.questions.length),
+        answers: state.answers.map(a => a || '-').join(''),
+        sections: exam.sections.map((s, i) => ({ title: s.title, subject: s.subject || null, correct: result.bySection[i].correct, total: s.count }))
+    });
+}
+
+// "Meta: 96 · ✓ Alcanzada" / "te faltaron 9" for this exam's length; empty without a goal.
+function goalText(correct, total) {
+    const goal = goalFor(total);
+    if (goal === null) return null;
+    return { goal, hit: correct >= goal, missing: Math.max(0, goal - correct) };
+}
+
 // Results image: drawn in the browser, shared (phones) or downloaded (computers).
 async function downloadCard(btn) {
     const note = document.getElementById('cardNote');
@@ -470,6 +530,7 @@ async function downloadCard(btn) {
             bySection,
             elapsed: formatDuration(state.elapsedMs),
             overtime: over > 0 ? formatDuration(over) : '',
+            goal: goalText(correctCount, exam.questions.length),
             date: new Date(state.finishedAt || Date.now()).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
         });
         const slug = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -519,10 +580,10 @@ app.addEventListener('click', e => {
     switch (btn.dataset.act) {
         case 'begin': begin(); break;
         case 'restart':
-            // Shared devices: a new attempt is a new person, so the name is cleared too.
+            // New attempt by the same student: start from the profile's name (or empty without a profile).
             clearAttempt(exam.id);
             runSince = null;
-            state = freshState();
+            state = Object.assign(freshState(), { name: profileName() });
             nameError = '';
             persist();
             render({ focus: '#studentName', scrollTop: true });
@@ -550,7 +611,12 @@ app.addEventListener('click', e => {
         }
         case 'grade':
             if (missingQuestions().length) { set({ confirming: true }); break; }
-            set({ view: 'results', confirming: false, finishedAt: Date.now(), score: grade(exam, state.answers).correctCount }, { scrollTop: true });
+            {
+                const finishedAt = Date.now();
+                const result = grade(exam, state.answers);
+                set({ view: 'results', confirming: false, finishedAt, score: result.correctCount }, { scrollTop: true });
+                recordHistory(result, finishedAt);
+            }
             break;
         case 'show-results': set({ view: 'results', showMap: false }, { scrollTop: true }); break;
         case 'review': set({ view: 'review', current: 0, showMap: false }, { scrollTop: true }); break;

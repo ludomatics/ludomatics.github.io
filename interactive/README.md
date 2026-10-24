@@ -3,34 +3,44 @@
 Static, self-contained quiz pages for GitHub Pages. They do not use the YAML sources, the build scripts or `src/`
 from the answer-sheet site.
 
-Students only ever see two places:
+Students use two places:
 
-- `/universidad/` lists exams whose `category` is `Universidad`; exams open at `/universidad/examen.html?id=<exam-id>`
-- `/bachillerato/` lists exams whose `category` is `Bachillerato`; exams open at `/bachillerato/examen.html?id=<exam-id>`
+- `/interactive/` is their home. The first visit asks three things (level, name and goal) and remembers them on
+  that device. After that it shows their level's exams, anything in progress ("Continúa donde te quedaste") and
+  their latest results. Exams open at `/interactive/examen.html?id=<exam-id>`.
+- `/invitado/` is guest mode for someone using another person's device: it asks level and name every time, saves
+  nothing after the tab closes, and never reads or changes the owner's profile, history or attempts.
 
-This folder (`/interactive/`) is the shared engine and has no pages of its own. Each `examen.html` loads it with
-`<base href="../interactive/">`, so every relative URL on that page (code, styles, `exams/<id>.json`, question
-images) resolves here. Fix something once and both catalogs get it.
+Rules in personal mode:
 
-Each catalog card shows what this browser has saved for that exam: in progress (answered count, name) or graded (score).
+- Students only see and open exams of their level. An exam of the other level opened by direct link shows
+  "Este examen es de …" instead. An exam link opened before onboarding goes through onboarding (with that exam's
+  level preset) and then back to the exam.
+- The level can change in "Editar perfil" until the student has answered 10 questions (any exam) or graded any
+  exam; after that it is locked so progress never mixes levels. Name and goal can always change.
+- "Empezar de nuevo" (in "Editar perfil", double confirmation) deletes the profile, history, attempts and saved
+  passwords on that device and restarts onboarding.
+
+`/universidad/` and `/bachillerato/` (and their `examen.html`) are old addresses that redirect to `/interactive/`;
+on a first visit they preset the level and skip that question.
 
 ```
-bachillerato/
-├── index.html          # catalog: exams with category "Bachillerato"
-└── examen.html         # quiz page: examen.html?id=<exam-id> (loads the engine below)
-universidad/
-├── index.html          # catalog: exams with category "Universidad"
-└── examen.html         # quiz page
-interactive/            # shared engine, no pages
+interactive/
+├── index.html          # student home + onboarding
+├── examen.html         # quiz page: examen.html?id=<exam-id>
 ├── quiz.css            # styles (same look as the answer sheets, light only)
 ├── js/
-│   ├── list.js         # renders a catalog
+│   ├── home.js         # onboarding, home, profile editor (also guest mode)
+│   ├── catalog.js      # exam list and cards
 │   ├── quiz.js         # quiz UI: questions, timer, map, finish dialog, results, review
-│   ├── exam.js         # loads + validates an exam JSON, grading
-│   └── storage.js      # localStorage autosave (one attempt per exam per browser)
+│   ├── exam.js         # loads, decrypts and validates an exam; grading
+│   ├── profile.js      # profile (level, name, goal), history, remembered passwords
+│   ├── storage.js      # localStorage (personal) or sessionStorage (guest)
+│   └── scorecard.js    # downloadable results image
 └── exams/
-    ├── index.json          # which exams appear in the catalogs
+    ├── index.json          # which exams appear in the lists
     └── <exam-id>.enc.json  # one encrypted file per exam (questions, answers and images)
+invitado/               # guest mode: index.html + examen.html, same engine
 exams-private/          # NOT in git (.gitignore): readable sources, keep a backup elsewhere
 ├── <exam-id>.json      # the exam you edit
 └── <exam-id>/          # its figures (q03.png, ...)
@@ -64,6 +74,7 @@ the questions, the answers or the figures. Students type the password once per b
   "sections": [
     {
       "title": "Física",
+      "subject": "fisica",
       "questions": [
         {
           "text": "Un cuerpo acelera a $2\\,\\text{m/s}^2$ ...",
@@ -77,7 +88,11 @@ the questions, the answers or the figures. Students type the password once per b
 }
 ```
 
-- `category` sends the "← Exámenes" link back to `/universidad/` or `/bachillerato/`.
+- `category` (`Universidad` or `Bachillerato`) decides which students see it.
+- Each section has a `subject` (e.g. `fisica`, `historia-mexico`): the same key across exams lets the progress
+  dashboard add up a subject over every exam. Keys in use: `fisica`, `quimica`, `biologia`, `matematicas`,
+  `espanol`, `literatura`, `geografia`, `historia`, `historia-universal`, `historia-mexico`, `formacion-civica`,
+  `habilidad-verbal`, `habilidad-matematica`.
 - `durationMinutes` sets the timer (default 180). It starts at "Comenzar", pauses while the page is closed,
   can be hidden by the student, and turns red and counts overtime when it runs out (grading stays manual).
 - Questions are numbered automatically in order, across sections.
@@ -104,8 +119,8 @@ the questions, the answers or the figures. Students type the password once per b
 { "id": "unam-2021-area-1", "title": "UNAM 2021 · Área 1", "category": "Universidad", "questionCount": 120 }
 ```
 
-`category` decides which catalog shows it. Add `"hidden": true` to keep it out of the catalogs; it still opens with its direct
-link, e.g. `/universidad/examen.html?id=<exam-id>` (hidden is not secret: use a password for that).
+`category` decides which students see it. Add `"hidden": true` to keep it out of every list; it still opens with its
+direct link, e.g. `/interactive/examen.html?id=<exam-id>` (hidden is not secret: use a password for that).
 
 3. Encrypt it (needs Node 18 or newer; it asks for the password twice):
 
@@ -125,13 +140,23 @@ The pages fetch JSON, so open them through a local server, not as files:
 
 ```bash
 python3 -m http.server 8000
-# http://localhost:8000/universidad/
+# http://localhost:8000/interactive/
 ```
 
 Use `localhost`, not your computer's network address (`http://192.168…`): browsers only allow the decryption on
 `https://` pages and on `localhost`.
 
-## Saved progress
+## What is saved on the device
 
-Each exam saves one attempt in the browser's localStorage under `ludomatics.quiz.<exam-id>`.
-Reloading resumes on the same question. "Nuevo intento" clears it, name included, for shared devices.
+Personal mode keeps everything in the browser's localStorage, on that device only (no accounts, no server):
+
+| Key | Contents |
+|---|---|
+| `ludomatics.profile` | level, name, goal (`{ correct, total }`) |
+| `ludomatics.history` | one record per graded attempt: exam, date, score, goal, time, answers, per-section (with `subject`) |
+| `ludomatics.quiz.<exam-id>` | the current attempt of that exam (resumes after reloads) |
+| `ludomatics.password.<exam-id>` | the password of a protected exam, so it is not asked again |
+
+Guest mode uses the same names under `ludomatics.guest.` in sessionStorage, which the browser deletes when the tab
+closes ("Salir del modo invitado" deletes it right away). "Nuevo intento" clears only that exam's current attempt;
+the history keeps every graded result. Safari may delete a site's data after 7 days without visiting it.

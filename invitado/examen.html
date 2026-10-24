@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es" data-mode="guest">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Examen · Ludomatics</title>
+    <!-- Guest mode: nothing outlives this tab. The quiz engine (code, styles, exam files) lives in /interactive/. Every relative URL on this page,
+         including exams/<id>.json and question images, resolves from there. -->
+    <base href="../interactive/">
+    <link rel="stylesheet" href="quiz.css">
+    <script>
+        // Write math as $...$ inside question text and options.
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' },
+            startup: { typeset: false }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" defer></script>
+</head>
+<body>
+    <main class="app" id="app" aria-live="polite">
+        <p class="muted">Cargando examen...</p>
+    </main>
+    <script type="module" src="js/quiz.js"></script>
+</body>
+</html>

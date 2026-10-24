@@ -7,45 +7,78 @@
   "sections": [
     {
       "title": "Física",
+      "subject": "fisica",
       "questions": [
         {
           "text": "Un automóvil parte del reposo y acelera de manera uniforme a $2\\,\\dfrac{\\text{m}}{\\text{s}^2}$. ¿Qué distancia recorre en $5\\,\\text{s}$?",
-          "options": ["$10\\,\\text{m}$", "$25\\,\\text{m}$", "$50\\,\\text{m}$", "$20\\,\\text{m}$"],
+          "options": [
+            "$10\\,\\text{m}$",
+            "$25\\,\\text{m}$",
+            "$50\\,\\text{m}$",
+            "$20\\,\\text{m}$"
+          ],
           "answer": "B"
         },
         {
           "text": "¿Cuál de las siguientes magnitudes se mide en joules?",
-          "options": ["Potencia", "Fuerza", "Trabajo", "Presión"],
+          "options": [
+            "Potencia",
+            "Fuerza",
+            "Trabajo",
+            "Presión"
+          ],
           "answer": "C"
         }
       ]
     },
     {
       "title": "Matemáticas",
+      "subject": "matematicas",
       "questions": [
         {
           "text": "Simplifica la expresión $\\dfrac{x^2-9}{x-3}$.",
-          "options": ["$x-3$", "$x+3$", "$x^2+3$", "$3$"],
+          "options": [
+            "$x-3$",
+            "$x+3$",
+            "$x^2+3$",
+            "$3$"
+          ],
           "answer": "B"
         },
         {
           "text": "¿Cuál es la pendiente de la recta que pasa por los puntos $(1,\\,2)$ y $(3,\\,8)$?",
-          "options": ["$2$", "$3$", "$4$", "$6$"],
+          "options": [
+            "$2$",
+            "$3$",
+            "$4$",
+            "$6$"
+          ],
           "answer": "B"
         }
       ]
     },
     {
       "title": "Español",
+      "subject": "espanol",
       "questions": [
         {
           "text": "¿Qué figura retórica se presenta en el siguiente verso?<blockquote>Tus ojos son dos luceros.</blockquote>",
-          "options": ["Metáfora", "Hipérbole", "Anáfora", "Onomatopeya"],
+          "options": [
+            "Metáfora",
+            "Hipérbole",
+            "Anáfora",
+            "Onomatopeya"
+          ],
           "answer": "A"
         },
         {
           "text": "¿Cuál de las siguientes palabras es esdrújula?",
-          "options": ["Camión", "Árbol", "Música", "Reloj"],
+          "options": [
+            "Camión",
+            "Árbol",
+            "Música",
+            "Reloj"
+          ],
           "answer": "C"
         }
       ]

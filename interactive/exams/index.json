@@ -5,7 +5,7 @@
       "title": "Examen de prueba",
       "category": "Universidad",
       "questionCount": 6,
-      "description": "6 preguntas de ejemplo y 15 minutos, sin contraseña. Oculto: se abre en /universidad/examen.html?id=examen-ejemplo",
+      "description": "6 preguntas de ejemplo y 15 minutos, sin contraseña. Oculto: se abre en /interactive/examen.html?id=examen-ejemplo",
       "hidden": true
     },
     {

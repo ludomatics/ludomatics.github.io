@@ -1,39 +1,77 @@
-// Saves one attempt per exam in this browser's localStorage.
-// Every access is wrapped: private mode or blocked storage must never break the quiz.
+// Everything the site remembers goes through this module.
+//
+// Two modes, chosen by the page (<html data-mode="guest"> for /invitado/):
+// - personal (default): kept on this device in localStorage, under "ludomatics.*"
+// - guest: kept only while the tab is open (sessionStorage), under "ludomatics.guest.*",
+//   so a guest never reads or changes the owner's profile, history or attempts.
+//
+// Every access is wrapped: private mode or blocked storage must never break the site.
 
-const PREFIX = 'ludomatics.quiz.';
+export const MODE = document.documentElement.dataset.mode === 'guest' ? 'guest' : 'personal';
+const PREFIX = MODE === 'guest' ? 'ludomatics.guest.' : 'ludomatics.';
 
-function key(examId) {
-    return PREFIX + examId;
+function backend() {
+    try { return MODE === 'guest' ? sessionStorage : localStorage; } catch (e) { return null; }
 }
 
-export function loadAttempt(examId, questionCount) {
+export function getJSON(name, fallback = null) {
     try {
-        const raw = localStorage.getItem(key(examId));
-        if (!raw) return null;
-        const attempt = JSON.parse(raw);
-        // Drop attempts that no longer match the exam (e.g. questions were added or removed).
-        if (!attempt || !Array.isArray(attempt.answers) || attempt.answers.length !== questionCount) return null;
-        return attempt;
+        const raw = backend().getItem(PREFIX + name);
+        return raw === null ? fallback : JSON.parse(raw);
     } catch (e) {
-        return null;
+        return fallback;
     }
 }
 
-// Returns true when the attempt was saved.
-export function saveAttempt(examId, attempt) {
+// Returns true when it was saved.
+export function setJSON(name, value) {
     try {
-        localStorage.setItem(key(examId), JSON.stringify(attempt));
+        backend().setItem(PREFIX + name, JSON.stringify(value));
         return true;
     } catch (e) {
         return false;
     }
 }
 
-export function clearAttempt(examId) {
+export function remove(name) {
+    try { backend().removeItem(PREFIX + name); } catch (e) { /* nothing to remove */ }
+}
+
+// Every key this mode owns (used to wipe guest data on "Salir").
+export function clearAll() {
+    const store = backend();
+    if (!store) return;
     try {
-        localStorage.removeItem(key(examId));
+        Object.keys(store).filter(k => k.startsWith(PREFIX)).forEach(k => store.removeItem(k));
+    } catch (e) { /* ignore */ }
+}
+
+// ---------------- exam attempts (one in-progress or graded attempt per exam) ----------------
+
+export function loadAttempt(examId, questionCount) {
+    const attempt = getJSON('quiz.' + examId);
+    // Drop attempts that no longer match the exam (e.g. questions were added or removed).
+    if (!attempt || !Array.isArray(attempt.answers) || attempt.answers.length !== questionCount) return null;
+    return attempt;
+}
+
+export function saveAttempt(examId, attempt) {
+    return setJSON('quiz.' + examId, attempt);
+}
+
+export function clearAttempt(examId) {
+    remove('quiz.' + examId);
+}
+
+// Every saved attempt in this mode (any exam), e.g. to count answered questions.
+export function allAttempts() {
+    const store = backend();
+    if (!store) return [];
+    try {
+        return Object.keys(store).filter(k => k.startsWith(PREFIX + 'quiz.'))
+            .map(k => { try { return JSON.parse(store.getItem(k)); } catch (e) { return null; } })
+            .filter(a => a && Array.isArray(a.answers));
     } catch (e) {
-        /* nothing to clear */
+        return [];
     }
 }
