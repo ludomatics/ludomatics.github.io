@@ -166,7 +166,7 @@ export async function saveScoreCard(canvas, filename, title) {
 //         subjects: [{ name, pct, correct, total, attention }] (weakest first), threshold }
 export function drawProgressCard(data) {
     const subjects = data.subjects.slice(0, 10);
-    const goalH = data.goal ? 250 : 0;
+    const goalH = data.goal ? 280 : 0;
     const chartTop = 640 + goalH, chartH = 300;
     const subjectsTop = chartTop + chartH + 150;
     const rowH = 74;
@@ -214,15 +214,24 @@ export function drawProgressCard(data) {
         ctx.fillStyle = C.blue; ctx.font = font(64, 'bold'); ctx.fillText(String(g.goal), PAD, y + 72);
         const gw = ctx.measureText(String(g.goal)).width;
         ctx.fillStyle = C.ink; ctx.font = font(32); ctx.fillText('de ' + g.total + ' aciertos (' + Math.round(g.goalPct) + '%)', PAD + gw + 16, y + 72);
-        const barY = y + 104, barW = W - PAD * 2;
+        // The bar is the whole exam: filled to the latest result, with ticks for the best result and the goal.
+        const barY = y + 128, barW = W - PAD * 2;
+        const at = n => PAD + barW * Math.max(0, Math.min(1, n / g.total));
         ctx.fillStyle = C.rule; roundRect(ctx, PAD, barY, barW, 22, 11); ctx.fill();
-        const fill = Math.min(1, g.latest / g.goal);
-        if (fill > 0) { ctx.fillStyle = g.reached ? C.ok : C.blue; roundRect(ctx, PAD, barY, Math.max(22, barW * fill), 22, 11); ctx.fill(); }
+        if (g.latest > 0) { ctx.fillStyle = g.reached ? C.ok : C.blue; roundRect(ctx, PAD, barY, Math.max(22, at(g.latest) - PAD), 22, 11); ctx.fill(); }
+        if (g.best > g.latest) { ctx.fillStyle = 'rgba(51,51,51,0.6)'; ctx.fillRect(at(g.best) - 2, barY - 6, 4, 34); }
+        ctx.fillStyle = C.ok; ctx.fillRect(at(g.goal) - 3, barY - 10, 6, 42);
+        ctx.font = font(24, 'bold'); ctx.textAlign = at(g.goal) > W - PAD - 120 ? 'right' : 'center';
+        ctx.fillText('Meta ' + g.goal, ctx.textAlign === 'right' ? W - PAD : at(g.goal), barY - 18);
+        ctx.fillStyle = C.faint; ctx.font = font(22);
+        ctx.textAlign = 'left'; ctx.fillText('0', PAD, barY + 50);
+        ctx.textAlign = 'right'; ctx.fillText(g.total + ' aciertos', W - PAD, barY + 50);
+        ctx.textAlign = 'left';
         ctx.font = font(28); ctx.fillStyle = C.muted;
-        ctx.fillText('Último: ' + g.latest + '   ·   Mejor: ' + g.best, PAD, barY + 66);
+        ctx.fillText('Último: ' + g.latest + '   ·   Mejor: ' + g.best, PAD, barY + 92);
         if (g.reached) {   // only a reached goal is called out
             ctx.textAlign = 'right'; ctx.font = font(28, 'bold'); ctx.fillStyle = C.ok;
-            ctx.fillText('✓ Meta alcanzada', W - PAD, barY + 66);
+            ctx.fillText('✓ Meta alcanzada', W - PAD, barY + 92);
             ctx.textAlign = 'left';
         }
         y += goalH;

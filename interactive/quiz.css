@@ -342,11 +342,22 @@ fieldset.field legend { margin-bottom: 6px; padding: 0; font-weight: bold; }
 
 .goal-card .goal-big { margin: 0; font-size: 1.15rem; }
 .goal-card .goal-big strong { color: var(--blue); font-size: 2rem; }
+.goal-track { position: relative; padding-top: 26px; }
+.goal-flag { position: absolute; top: 0; transform: translateX(-50%); color: var(--ok); font-size: 0.85rem; font-weight: bold; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .goal-bar { height: 14px; border-radius: 7px; background: var(--rule); overflow: hidden; }
 .goal-bar > span { display: block; height: 100%; border-radius: 7px; background: var(--blue); }
 .goal-bar > span.hit { background: var(--ok); }
+.goal-tick { position: absolute; top: 20px; height: 26px; margin-left: -1.5px; width: 3px; border-radius: 2px; }
+.goal-tick.meta { background: var(--ok); }
+.goal-tick.best { top: 23px; height: 20px; margin-left: -1px; width: 2px; background: var(--ink); opacity: 0.6; }
+.goal-scale { display: flex; justify-content: space-between; margin-top: 4px; color: var(--faint); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 .goal-figures { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 .goal-figures strong { color: var(--ink); }
+.goal-figures .key { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.key.latest { width: 14px; height: 10px; border-radius: 5px; background: var(--blue); }
+.key.latest.hit { background: var(--ok); }
+.key.best { width: 2px; height: 14px; background: var(--ink); opacity: 0.6; }
+.key.meta { width: 3px; height: 16px; border-radius: 2px; background: var(--ok); }
 .goal-card p { margin: 0; }
 
 .chart { display: block; max-width: 100%; height: auto; margin: 0 auto; }

@@ -60,14 +60,25 @@ function goalCard(history) {
             '<p>Todavía no tienes una meta. Definirla te ayuda a saber cuánto te falta y qué materias reforzar.</p>' +
             '<div class="btn-row"><button class="btn primary" data-act="edit-goal">Define tu meta</button></div></section>';
     }
-    const fill = Math.min(100, (g.latest / g.goal) * 100);
+    // The bar is the whole exam (0 to its length): filled up to the latest result, with ticks for the best result and the goal.
+    const at = n => Math.max(0, Math.min(100, (n / g.total) * 100));
+    const goalAt = at(g.goal);
+    // Keep the "Meta" label inside the card near the edges.
+    const flagPos = goalAt > 85 ? 'right:' + (100 - goalAt) + '%;transform:none' : 'left:' + goalAt + '%';
     // Only a reached goal gets a message: how far below it they are can discourage students.
     const message = g.reached ? '<p class="goal-result hit">✓ Tu último resultado alcanzó tu meta.</p>' : '';
     return '<section class="panel goal-card"><h2 class="dash-h">Tu meta</h2>' +
         '<p class="goal-big"><strong>' + g.goal + '</strong> de ' + g.total + ' aciertos <span class="muted">(' + Math.round(g.goalPct) + '%)</span></p>' +
-        '<div class="goal-bar" role="img" aria-label="Último resultado: ' + g.latest + ' de ' + g.goal + ' aciertos de tu meta">' +
-        '<span style="width:' + fill + '%" class="' + (g.reached ? 'hit' : '') + '"></span></div>' +
-        '<div class="goal-figures"><span>Último: <strong>' + g.latest + '</strong></span><span>Mejor: <strong>' + g.best + '</strong></span><span>Meta: <strong>' + g.goal + '</strong></span></div>' +
+        '<div class="goal-track" role="img" aria-label="Último resultado: ' + g.latest + ' de ' + g.total + ' aciertos. Mejor: ' + g.best + '. Meta: ' + g.goal + '.">' +
+        '<span class="goal-flag' + (goalAt > 85 ? ' end' : '') + '" style="' + flagPos + '">Meta ' + g.goal + '</span>' +
+        '<div class="goal-bar"><span style="width:' + at(g.latest) + '%" class="' + (g.reached ? 'hit' : '') + '"></span></div>' +
+        (g.best > g.latest ? '<i class="goal-tick best" style="left:' + at(g.best) + '%"></i>' : '') +
+        '<i class="goal-tick meta" style="left:' + goalAt + '%"></i>' +
+        '<div class="goal-scale"><span>0</span><span>' + g.total + ' aciertos</span></div></div>' +
+        '<div class="goal-figures">' +
+        '<span><i class="key latest' + (g.reached ? ' hit' : '') + '"></i>Último: <strong>' + g.latest + '</strong></span>' +
+        '<span>' + (g.best > g.latest ? '<i class="key best"></i>' : '') + 'Mejor: <strong>' + g.best + '</strong></span>' +
+        '<span><i class="key meta"></i>Meta: <strong>' + g.goal + '</strong></span></div>' +
         message +
         (history.some(r => r.total !== g.total) ? '<p class="muted small">Los exámenes de otra longitud se convierten a la escala de ' + g.total + ' preguntas.</p>' : '') +
         '<p class="small"><button class="link-btn" data-act="edit-goal">Cambiar mi meta</button></p></section>';
