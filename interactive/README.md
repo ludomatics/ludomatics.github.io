@@ -51,6 +51,7 @@ interactive/
 │   ├── scorecard.js    # downloadable results and progress images
 │   ├── stats.js        # progress numbers: per-subject accuracy, goal status, score series
 │   ├── backup.js       # backup file: build, check, restore
+│   ├── boot-guard.js   # "versión nueva" screen when the modules fail to load
 │   └── dashboard.js    # the "Historial" and "Tu progreso" sections
 └── exams/
     ├── index.json          # which exams appear in the lists
@@ -148,6 +149,13 @@ It checks the exam, embeds the images, writes `interactive/exams/<exam-id>.enc.j
 
 The encryption step refuses an exam where a question has the wrong number of options, an invalid answer letter or a
 missing image, and says which question is wrong.
+
+## Publishing a new version
+
+GitHub Pages lets browsers cache files for up to 10 minutes, so right after a push a browser can mix new files with
+old ones and fail to start. `js/boot-guard.js` (a regular script on every page) catches that and shows
+"Hay una versión nueva de Ludomatics" with a "Recargar" button that fetches the site's files fresh. If you add a new
+module to `js/`, add its name to the `FILES` list there.
 
 ## Testing locally
 
