@@ -325,3 +325,65 @@ fieldset.field legend { margin-bottom: 6px; padding: 0; font-weight: bold; }
 .goal-result.miss { color: var(--ink); }
 .field .label { font-weight: bold; }
 .locked-level { margin: 0; font-size: 1.05rem; }
+
+/* ---------- progress dashboard (/interactive/progreso.html) ---------- */
+.dashboard { max-width: 760px; padding-bottom: 32px; }
+.dashboard .topbar .page-title { font-size: 1.9rem; }
+.dash-h { margin: 0; font-size: 1.2rem; }
+.dash-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.tile { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 8px; background: var(--card); box-shadow: var(--shadow); }
+.tile-value { color: var(--blue); font-size: 1.6rem; font-weight: bold; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile-label { color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 560px) { .dash-tiles { grid-template-columns: repeat(2, 1fr); } }
+
+.goal-card .goal-big { margin: 0; font-size: 1.15rem; }
+.goal-card .goal-big strong { color: var(--blue); font-size: 2rem; }
+.goal-bar { height: 14px; border-radius: 7px; background: var(--rule); overflow: hidden; }
+.goal-bar > span { display: block; height: 100%; border-radius: 7px; background: var(--blue); }
+.goal-bar > span.hit { background: var(--ok); }
+.goal-figures { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+.goal-figures strong { color: var(--ink); }
+.goal-card p { margin: 0; }
+
+.chart { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 13px; font-family: Arial, Helvetica, sans-serif; }
+.chart .goal-line { stroke: var(--ok); stroke-width: 2; stroke-dasharray: 6 5; }
+.chart .goal-label { fill: var(--ok); font-size: 13px; font-weight: bold; font-family: Arial, Helvetica, sans-serif; }
+.chart .line { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linejoin: round; }
+.chart .pt { fill: var(--card); stroke: var(--blue); stroke-width: 3; }
+.chart .pt.hit { fill: var(--ok); stroke: var(--ok); }
+
+.subject-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.subject-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.subject-name { font-weight: bold; }
+.subject-pct { margin-left: auto; font-weight: bold; font-variant-numeric: tabular-nums; }
+.subject.attention .subject-pct { color: var(--bad); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--bad-soft); color: var(--bad); font-size: 0.78rem; font-weight: bold; }
+.subject-bar { position: relative; height: 10px; margin-top: 6px; border-radius: 5px; background: var(--rule); }
+.subject-bar > span { display: block; height: 100%; border-radius: 5px; }
+.subject-bar > span.good { background: var(--ok); }
+.subject-bar > span.mid { background: #f9a825; }
+.subject-bar > span.low { background: var(--bad); }
+.subject-bar .threshold { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); opacity: 0.55; }
+.subject-meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.trend.up { color: var(--ok); font-weight: bold; }
+.trend.down { color: var(--bad); font-weight: bold; }
+
+/* home summary card */
+.progress-card {
+    display: flex; flex-direction: column; gap: 10px; padding: 16px 18px;
+    border-left: 4px solid var(--ok); border-radius: 8px; background: var(--card); box-shadow: var(--shadow);
+    color: var(--ink); text-decoration: none;
+}
+.progress-card:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+.pc-line { margin: 0; }
+.pc-attention { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.progress-card .resume-go { align-self: flex-end; }
+
+/* history rows that open a past attempt */
+.history-list li:has(> .history-link) { padding: 0; }
+.history-link { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 16px; color: var(--ink); text-decoration: none; }
+.history-link:hover { background: var(--blue-tint); }
+.h-go { color: var(--faint); font-size: 1.4rem; line-height: 1; }
+.past-note { margin: 0; padding: 6px 12px; align-self: flex-start; border-radius: 4px; background: var(--blue-soft); color: var(--blue-dark); font-size: 0.9rem; font-weight: bold; }

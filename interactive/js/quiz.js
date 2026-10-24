@@ -1,7 +1,7 @@
 // Interactive exam: one question at a time, autosave, question map, results and review.
 import { loadExamFile, unlockExam, normalizeExam, grade, ExamError } from './exam.js';
 import { MODE, loadAttempt, saveAttempt, clearAttempt } from './storage.js';
-import { LEVELS, levelOfCategory, levelLocked, getProfile, goalFor, addToHistory, getPassword, rememberPassword, forgetPassword } from './profile.js';
+import { LEVELS, levelOfCategory, levelLocked, getProfile, getHistory, goalFor, addToHistory, getPassword, rememberPassword, forgetPassword } from './profile.js';
 
 const app = document.getElementById('app');
 let exam = null;
@@ -49,12 +49,38 @@ loadExamFile(examId)
             '</section>';
     });
 
+// ?intento=<finishedAt>: a past graded attempt from the history, shown read-only.
+const pastAttemptId = Number(new URLSearchParams(location.search).get('intento')) || null;
+let past = null;   // the history record being viewed (read-only mode)
+
 function start(loaded) {
     exam = loaded;
     document.title = exam.title + ' · Ludomatics';
+    if (pastAttemptId) return startPast();
     state = Object.assign(freshState(), loadAttempt(exam.id, exam.questions.length) || {}, { showMap: false, confirming: false });
     if (!state.name) state.name = profileName();
     render({ focus: '#studentName' });
+}
+
+// Rebuilds a past attempt from its history record: same answers, results and review, nothing saved.
+function startPast() {
+    const record = getHistory().find(r => r.examId === exam.id && r.finishedAt === pastAttemptId);
+    const answers = record && typeof record.answers === 'string' ? record.answers.split('') : null;
+    if (!answers || answers.length !== exam.questions.length) {
+        app.innerHTML =
+            '<header class="topbar"><div class="topbar-main"><a class="back-link" href="progreso.html">← Mi progreso</a>' +
+            '<p class="exam-title">' + esc(exam.title) + '</p></div></header>' +
+            '<section class="panel"><h1 class="page-title">No se puede abrir este resultado</h1>' +
+            '<p>' + (record ? 'El examen cambió desde que lo respondiste, así que ya no se pueden mostrar tus respuestas.' : 'No encontramos este resultado en tu historial.') + '</p>' +
+            '<div class="btn-row"><a class="btn primary" href="progreso.html">Volver a mi progreso</a></div></section>';
+        return;
+    }
+    past = record;
+    state = Object.assign(freshState(), {
+        view: 'results', name: profileName(), answers: answers.map(a => (exam.letters.includes(a) ? a : null)),
+        finishedAt: record.finishedAt, elapsedMs: record.elapsedMs || 0, score: record.correct
+    });
+    render({ scrollTop: true });
 }
 
 // The name saved during onboarding (personal or guest), so students don't type it for every exam.
@@ -130,6 +156,7 @@ function freshState() {
 }
 
 function persist() {
+    if (past) return;   // a past attempt is read-only: never saved over the current one
     foldClock();
     const { showMap, confirming, ...saved } = state;
     storageOk = saveAttempt(exam.id, saved);
@@ -233,7 +260,8 @@ const catalogHref = () => catalogHrefFor();
 function topbar() {
     return '<header class="topbar"><div class="topbar-main">' +
         // No way out to the catalog while answering: keeps students focused.
-        (state.view === 'start' || state.view === 'results' ? '<a class="back-link" href="' + catalogHref() + '">← Exámenes</a>' : '') +
+        (past ? '<a class="back-link" href="progreso.html">← Mi progreso</a>'
+            : state.view === 'start' || state.view === 'results' ? '<a class="back-link" href="' + catalogHref() + '">← Exámenes</a>' : '') +
         '<p class="exam-title">' + esc(exam.title) + '</p>' +
         (storageOk ? '' : '<p class="save-warning">Tu progreso no se guardará si recargas la página.</p>') +
         '</div>' + (state.view === 'quiz' ? timerHtml() : '') +
@@ -439,7 +467,14 @@ function resultsView() {
             '<td class="bar-cell"><div class="bar"><span style="width:' + p + '%"></span></div></td><td class="num">' + p + '%</td></tr>';
     }).join('');
     const heading = state.name ? esc(state.name) + ', este es tu resultado' : 'Tu resultado';
-    return '<section class="panel">' +
+    const when = new Date(state.finishedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    const pastNote = past
+        ? '<p class="past-note">Resultado del ' + when + ' · solo lectura</p>' +
+          (past.correct !== correctCount
+            ? '<p class="muted small">En tu historial quedó con ' + past.correct + ' aciertos; la clave de respuestas se corrigió después, así que aquí se califica con la clave actual.</p>'
+            : '')
+        : '';
+    return '<section class="panel">' + pastNote +
         '<h1 class="page-title">' + heading + '</h1>' +
         '<div class="score-wrap"><span class="score">' + correctCount + '<small> / ' + total + '</small></span>' +
         '<span class="pct">' + pct + '% de aciertos</span></div>' +
@@ -450,8 +485,9 @@ function resultsView() {
         '<tbody>' + rows + '</tbody></table></div>' +
         '<div class="btn-row"><button class="btn primary" data-act="review">Revisar respuestas</button>' +
         '<button class="btn" data-act="download-card" id="cardBtn">Descargar resultado</button>' +
-        '<button class="btn" data-act="restart">Nuevo intento</button></div>' +
+        (past ? '' : '<button class="btn" data-act="restart">Nuevo intento</button>') + '</div>' +
         '<p class="muted small" id="cardNote" aria-live="polite"></p>' +
+        (MODE === 'personal' && getProfile() && !past ? '<p><a href="progreso.html">Ver mi progreso →</a></p>' : '') +
         '</section>' + mapPanel(true, false);
 }
 
@@ -507,7 +543,8 @@ function recordHistory(result, finishedAt) {
 
 // "Meta: 96 · ✓ Alcanzada" / "te faltaron 9" for this exam's length; empty without a goal.
 function goalText(correct, total) {
-    const goal = goalFor(total);
+    // A past attempt is measured against the goal it had back then.
+    const goal = past ? (typeof past.goal === 'number' ? past.goal : null) : goalFor(total);
     if (goal === null) return null;
     return { goal, hit: correct >= goal, missing: Math.max(0, goal - correct) };
 }

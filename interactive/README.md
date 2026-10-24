@@ -8,8 +8,15 @@ Students use two places:
 - `/interactive/` is their home. The first visit asks three things (level, name and goal) and remembers them on
   that device. After that it shows their level's exams, anything in progress ("Continúa donde te quedaste") and
   their latest results. Exams open at `/interactive/examen.html?id=<exam-id>`.
-- `/invitado/` is guest mode for someone using another person's device: it asks level and name every time, saves
-  nothing after the tab closes, and never reads or changes the owner's profile, history or attempts.
+- `/invitado/` is guest mode for a shared device: it asks level and name every time, saves nothing after the tab
+  closes, and never reads or changes the owner's profile, history or attempts. Nothing in the site links to it;
+  teachers share the address only when a device is shared.
+
+`/interactive/progreso.html` ("Tu progreso", linked from the home and the results page) is built from the history of
+graded exams: totals, the latest and best result against the goal, a chart of every result over time, accuracy per
+subject (summed across exams by `subject`) and the full history. A subject is marked "Necesita atención" once the
+student answered at least 10 of its questions and their accuracy is below their goal percentage (60% without a goal).
+The home page shows a summary of it.
 
 Rules in personal mode:
 
@@ -28,6 +35,7 @@ on a first visit they preset the level and skip that question.
 interactive/
 ├── index.html          # student home + onboarding
 ├── examen.html         # quiz page: examen.html?id=<exam-id>
+├── progreso.html       # progress dashboard (personal mode)
 ├── quiz.css            # styles (same look as the answer sheets, light only)
 ├── js/
 │   ├── home.js         # onboarding, home, profile editor (also guest mode)
@@ -36,7 +44,9 @@ interactive/
 │   ├── exam.js         # loads, decrypts and validates an exam; grading
 │   ├── profile.js      # profile (level, name, goal), history, remembered passwords
 │   ├── storage.js      # localStorage (personal) or sessionStorage (guest)
-│   └── scorecard.js    # downloadable results image
+│   ├── scorecard.js    # downloadable results image
+│   ├── stats.js        # progress numbers: per-subject accuracy, goal status, score series
+│   └── progress.js     # the dashboard page
 └── exams/
     ├── index.json          # which exams appear in the lists
     └── <exam-id>.enc.json  # one encrypted file per exam (questions, answers and images)

@@ -3,11 +3,12 @@
 import { MODE, clearAll } from './storage.js';
 import { LEVELS, getProfile, saveProfile, updateProfile, getHistory, levelLocked, startOver, LEVEL_LOCK_ANSWERS } from './profile.js';
 import { esc, fetchExamIndex, inCategory, statusOf, examCard, examHref } from './catalog.js';
+import { totals, subjectStats, goalStatus } from './stats.js';
+import { goalFields, bindGoalSync } from './goal-ui.js';
 
 const app = document.getElementById('app');
 const GUEST = MODE === 'guest';
 let exams = [];
-let editing = false;        // profile editor open
 let confirmStartOver = false; // second step of "Empezar de nuevo"
 let draft = null;           // onboarding answers so far: { step, level, name, goal }
 
@@ -16,7 +17,9 @@ const params = new URLSearchParams(location.search);
 const presetLevel = LEVELS[params.get('nivel')] ? params.get('nivel') : null;
 // ?volver=<exam-id>: an exam link opened before onboarding; go back to it once the profile exists.
 const returnTo = /^[a-z0-9-]+$/.test(params.get('volver') || '') ? params.get('volver') : null;
-if (params.has('nivel') || params.has('volver')) history.replaceState(null, '', location.pathname);
+// ?editar=1 (from the dashboard's "Define tu meta") opens the profile editor.
+let editing = params.get('editar') === '1' && !!getProfile();
+if (params.has('nivel') || params.has('volver') || params.has('editar')) history.replaceState(null, '', location.pathname);
 
 fetchExamIndex()
     .then(list => { exams = list; render(); })
@@ -75,16 +78,9 @@ function onboardingView() {
             '<button class="btn" type="button" data-act="skip-goal">Definir después</button>' +
             '<button class="btn ghost" type="button" data-act="back">Atrás</button></div></form>';
     }
-    return '<section class="panel onboarding">' + body + '</section>' + (GUEST ? '' : guestFooter());
+    return '<section class="panel onboarding">' + body + '</section>';
 }
 
-function goalFields(value, total) {
-    return '<div class="goal-field"><label for="goalNumber">Aciertos</label>' +
-        '<div class="goal-inputs"><input id="goalNumber" type="number" inputmode="numeric" min="1" max="' + total + '" value="' + value + '" required>' +
-        '<span class="goal-total">de ' + total + '</span></div>' +
-        '<input id="goalRange" type="range" min="1" max="' + total + '" value="' + value + '" aria-label="Aciertos">' +
-        '<p class="muted small" id="goalPct">' + Math.round((value / total) * 100) + '% de aciertos</p></div>';
-}
 
 function finishOnboarding(goal) {
     saveProfile({ level: draft.level, name: draft.name, goal });
@@ -122,28 +118,25 @@ function homeView(p) {
         : '<p class="muted">Todavía no hay exámenes de ' + level.label.toLowerCase() + '.</p>';
     const catalog = '<section class="home-section"><h2>Exámenes de ' + level.label.toLowerCase() + '</h2>' + list(mine) + '</section>';
 
-    const footer = '<footer class="footer home-footer">' +
-        (GUEST ? '' : '<a href="../invitado/">¿Alguien más usa este dispositivo? Entra como invitado</a>') + '</footer>';
-
-    return head + resume + catalog + (GUEST ? '' : recentResults()) + footer;
+    return head + resume + (GUEST ? '' : progressCard(p)) + catalog;
 }
 
-function recentResults() {
-    const recent = getHistory().slice(-5).reverse();
-    if (!recent.length) return '';
-    const date = t => new Date(t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
-    return '<section class="home-section"><h2>Tus últimos resultados</h2><ul class="history-list">' + recent.map(r => {
-        const pct = Math.round((r.correct / r.total) * 100);
-        const goal = typeof r.goal === 'number'
-            ? (r.correct >= r.goal ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '<span class="goal-miss">A ' + (r.goal - r.correct) + ' de tu meta</span>')
-            : '';
-        return '<li><span class="h-title"><strong>' + esc(r.examTitle) + '</strong><span class="muted small">' + date(r.finishedAt) + '</span></span>' +
-            '<span class="h-score"><span><strong>' + r.correct + '</strong> / ' + r.total + ' <span class="muted small">(' + pct + '%)</span></span>' + goal + '</span></li>';
-    }).join('') + '</ul></section>';
-}
-
-function guestFooter() {
-    return '<footer class="footer home-footer"><a href="../invitado/">¿Usas un dispositivo de alguien más? Entra como invitado</a></footer>';
+// Summary of the dashboard: latest result vs. goal and the subjects that need attention.
+function progressCard(p) {
+    const history = getHistory();
+    if (!history.length) return '';
+    const t = totals(history);
+    const g = goalStatus(history, p);
+    const flagged = subjectStats(history, p).filter(s => s.attention).slice(0, 3);
+    const latest = g
+        ? '<p class="pc-line">Último resultado: <strong>' + g.latest + '</strong> de ' + g.total + ' · ' +
+          (g.reached ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '<span>te faltan <strong>' + (g.goal - g.latest) + '</strong> para tu meta de ' + g.goal + '</span>') + '</p>'
+        : '<p class="pc-line">Último resultado: <strong>' + t.latest.correct + '</strong> de ' + t.latest.total + ' (' + Math.round(t.latest.pct) + '%)</p>';
+    const attention = flagged.length
+        ? '<div class="pc-attention"><span class="muted small">Necesitan atención:</span>' + flagged.map(s => '<span class="badge">' + esc(s.name) + ' · ' + Math.round(s.pct) + '%</span>').join('') + '</div>'
+        : '';
+    return '<section class="home-section"><h2>Tu progreso</h2><a class="progress-card" href="progreso.html">' + latest + attention +
+        '<span class="resume-go">Ver mi progreso →</span></a></section>';
 }
 
 // ---------------- profile editor ----------------
@@ -251,14 +244,7 @@ app.addEventListener('submit', e => {
 });
 
 // Keep the goal number, slider and percentage in sync; re-scale the goal when the level changes in the editor.
-app.addEventListener('input', e => {
-    const num = document.getElementById('goalNumber'), range = document.getElementById('goalRange'), pct = document.getElementById('goalPct');
-    if (e.target === num || e.target === range) {
-        const v = e.target.value;
-        if (e.target === num) range.value = v; else num.value = v;
-        if (pct) pct.textContent = Math.round((Number(v) / Number(range.max)) * 100) + '% de aciertos';
-    }
-});
+bindGoalSync(app);
 app.addEventListener('change', e => {
     if (e.target.id === 'edNoGoal') document.getElementById('edGoalBox').hidden = e.target.checked;
     if (e.target.name === 'edLevel') {
