@@ -23,6 +23,22 @@
       "questionCount": 127,
       "description": "Concurso de asignación 2020, educación media superior (versión B).",
       "protected": true
+    },
+    {
+      "id": "unam-2020-area-1",
+      "title": "UNAM 2020 · Área 1",
+      "category": "Universidad",
+      "questionCount": 120,
+      "description": "Ciencias Físico Matemáticas y de las Ingenierías. Examen muestra de la guía oficial.",
+      "protected": true
+    },
+    {
+      "id": "unam-2019-bachillerato",
+      "title": "UNAM 2019 · Bachillerato",
+      "category": "Bachillerato",
+      "questionCount": 128,
+      "description": "Examen muestra de la guía 2019 para la educación media superior.",
+      "protected": true
     }
   ]
 }
