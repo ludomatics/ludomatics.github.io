@@ -6,17 +6,25 @@ from the answer-sheet site.
 Students use two places:
 
 - `/interactive/` is their home. The first visit asks three things (level, name and goal) and remembers them on
-  that device. After that it shows their level's exams, anything in progress ("Continúa donde te quedaste") and
-  their latest results. Exams open at `/interactive/examen.html?id=<exam-id>`.
+  that device. After that the page has three sections:
+  - **Exámenes pendientes**: their level's exams in progress first, then the ones not started. A graded exam leaves
+    this list ("Nuevo intento" brings it back).
+  - **Historial**: one card per graded attempt, newest first (5, then "Ver todo"). A card opens that attempt's
+    results and review, with "Nuevo intento".
+  - **Tu progreso**: totals, the latest and best result against the goal (editable there), a chart of every result
+    over time and accuracy per subject.
+
+  Exams open at `/interactive/examen.html?id=<exam-id>`; a history card at `examen.html?id=<exam-id>&intento=<finishedAt>`.
 - `/invitado/` is guest mode for a shared device: it asks level and name every time, saves nothing after the tab
   closes, and never reads or changes the owner's profile, history or attempts. Nothing in the site links to it;
   teachers share the address only when a device is shared.
 
-`/interactive/progreso.html` ("Tu progreso", linked from the home and the results page) is built from the history of
-graded exams: totals, the latest and best result against the goal, a chart of every result over time, accuracy per
-subject (summed across exams by `subject`) and the full history. A subject is marked "Necesita atención" once the
-student answered at least 10 of its questions and their accuracy is below their goal percentage (60% without a goal).
-The home page shows a summary of it.
+"Tu progreso" is built from the history of graded exams. Accuracy per subject is summed across exams by `subject`;
+a subject is marked "Necesita atención" once the student answered at least 10 of its questions and their accuracy
+is below their goal percentage (60% without a goal).
+
+"Nuevo intento" never replaces a score: every graded attempt stays in the history, and only the current answers are
+cleared. Opened from an older result while another attempt is in progress, it offers to continue that one instead.
 
 Rules in personal mode:
 
@@ -33,12 +41,11 @@ on a first visit they preset the level and skip that question.
 
 ```
 interactive/
-├── index.html          # student home + onboarding
+├── index.html          # student home (pending exams, history, progress) + onboarding
 ├── examen.html         # quiz page: examen.html?id=<exam-id>
-├── progreso.html       # progress dashboard (personal mode)
 ├── quiz.css            # styles (same look as the answer sheets, light only)
 ├── js/
-│   ├── home.js         # onboarding, home, profile editor (also guest mode)
+│   ├── home.js         # onboarding, home sections, profile and goal editors (also guest mode)
 │   ├── catalog.js      # exam list and cards
 │   ├── quiz.js         # quiz UI: questions, timer, map, finish dialog, results, review
 │   ├── exam.js         # loads, decrypts and validates an exam; grading
@@ -46,7 +53,7 @@ interactive/
 │   ├── storage.js      # localStorage (personal) or sessionStorage (guest)
 │   ├── scorecard.js    # downloadable results image
 │   ├── stats.js        # progress numbers: per-subject accuracy, goal status, score series
-│   └── progress.js     # the dashboard page
+│   └── dashboard.js    # the "Historial" and "Tu progreso" sections
 └── exams/
     ├── index.json          # which exams appear in the lists
     └── <exam-id>.enc.json  # one encrypted file per exam (questions, answers and images)

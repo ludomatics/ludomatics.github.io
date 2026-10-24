@@ -1,25 +1,26 @@
-// Student home: onboarding (level, name, goal), then their exams, progress to continue and recent results.
-// The same page runs guest mode (/invitado/): nothing outlives the tab, and there is no goal step.
+// Student home: onboarding (level, name, goal), then three sections: pending exams, history and progress.
+// The same page runs guest mode (/invitado/): nothing outlives the tab, no goal step, and only the exam list.
 import { MODE, clearAll } from './storage.js';
 import { LEVELS, getProfile, saveProfile, updateProfile, getHistory, levelLocked, startOver, LEVEL_LOCK_ANSWERS } from './profile.js';
 import { esc, fetchExamIndex, inCategory, statusOf, examCard, examHref } from './catalog.js';
-import { totals, subjectStats, goalStatus } from './stats.js';
-import { goalFields, bindGoalSync } from './goal-ui.js';
+import { goalFields, bindGoalSync, readGoal } from './goal-ui.js';
+import { progressSection, historySection, chartOnly, goalDialog } from './dashboard.js';
 
 const app = document.getElementById('app');
 const GUEST = MODE === 'guest';
 let exams = [];
 let confirmStartOver = false; // second step of "Empezar de nuevo"
 let draft = null;           // onboarding answers so far: { step, level, name, goal }
+let editingGoal = false;    // goal overlay from "Tu progreso"
+let historyAll = false;     // "Ver todo" in Historial
 
 // A link like /interactive/?nivel=universidad (what /universidad/ redirects to) presets the level.
 const params = new URLSearchParams(location.search);
 const presetLevel = LEVELS[params.get('nivel')] ? params.get('nivel') : null;
 // ?volver=<exam-id>: an exam link opened before onboarding; go back to it once the profile exists.
 const returnTo = /^[a-z0-9-]+$/.test(params.get('volver') || '') ? params.get('volver') : null;
-// ?editar=1 (from the dashboard's "Define tu meta") opens the profile editor.
-let editing = params.get('editar') === '1' && !!getProfile();
-if (params.has('nivel') || params.has('volver') || params.has('editar')) history.replaceState(null, '', location.pathname);
+let editing = false;        // profile editor overlay
+if (params.has('nivel') || params.has('volver')) history.replaceState(null, '', location.pathname);
 
 fetchExamIndex()
     .then(list => { exams = list; render(); })
@@ -31,15 +32,25 @@ fetchExamIndex()
 // Coming back with the back button can show a cached page: refresh statuses.
 addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
 
+// Redraw the progress chart at the new width when the screen rotates or the window is resized.
+let resizeTimer;
+addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        const card = document.getElementById('chartCard'), p = getProfile();
+        if (card && p) card.outerHTML = chartOnly(getHistory(), p, app.clientWidth);
+    }, 150);
+});
+
 function render(focus) {
     const profile = getProfile();
     if (!profile || draft) {
         if (!draft) draft = { step: presetLevel ? 2 : 1, level: presetLevel, name: '', goal: null };
         app.innerHTML = onboardingView();
     } else {
-        app.innerHTML = homeView(profile) + (editing ? editDialog(profile) : '');
+        app.innerHTML = homeView(profile) + (editing ? editDialog(profile) : editingGoal ? goalDialog(profile) : '');
     }
-    document.body.style.overflow = editing ? 'hidden' : '';
+    document.body.style.overflow = editing || editingGoal ? 'hidden' : '';
     const el = focus && app.querySelector(focus);
     if (el) el.focus();
 }
@@ -105,38 +116,25 @@ function homeView(p) {
             ? '<button class="btn small-btn" data-act="guest-change">Cambiar nombre o nivel</button><button class="btn small-btn" data-act="guest-exit">Salir del modo invitado</button>'
             : '<button class="btn small-btn" data-act="edit">Editar perfil</button>') + '</div></header>';
 
-    // Exams of this level in progress.
-    const inProgress = mine.map(e => ({ e, s: statusOf(e) })).filter(x => x.s && x.s.kind === 'progress');
-    const resume = inProgress.length
-        ? '<section class="home-section"><h2>Continúa donde te quedaste</h2><div class="resume-list">' + inProgress.map(({ e, s }) =>
-            '<a class="resume-card" href="' + examHref(e.id) + '"><span><strong>' + esc(e.title) + '</strong>' +
-            '<span class="muted small">' + s.answered + ' de ' + e.questionCount + ' respondidas</span></span>' +
-            '<span class="resume-go">Continuar →</span></a>').join('') + '</div></section>'
-        : '';
+    const list = items => '<div class="exam-grid">' + items.map(examCard).join('') + '</div>';
+    if (GUEST) {
+        // Guest mode keeps no history, so it simply lists every exam of the level.
+        const catalog = mine.length ? list(mine) : '<p class="muted">Todavía no hay exámenes de ' + level.label.toLowerCase() + '.</p>';
+        return head + '<section class="home-section"><h2>Exámenes de ' + level.label.toLowerCase() + '</h2>' + catalog + '</section>';
+    }
 
-    const list = items => items.length ? '<div class="exam-grid">' + items.map(examCard).join('') + '</div>'
-        : '<p class="muted">Todavía no hay exámenes de ' + level.label.toLowerCase() + '.</p>';
-    const catalog = '<section class="home-section"><h2>Exámenes de ' + level.label.toLowerCase() + '</h2>' + list(mine) + '</section>';
+    // Pending: exams in progress first, then the ones not started. Graded exams move to Historial.
+    const withStatus = mine.map(e => ({ e, s: statusOf(e) }));
+    const pending = withStatus.filter(x => x.s && x.s.kind === 'progress')
+        .concat(withStatus.filter(x => !x.s)).map(x => x.e);
+    const empty = mine.length
+        ? '<p class="empty-note">¡Estás al día! Cuando haya exámenes nuevos de ' + level.label.toLowerCase() + ' aparecerán aquí.</p>'
+        : '<p class="empty-note">Todavía no hay exámenes de ' + level.label.toLowerCase() + '.</p>';
+    const pendingSection = '<section class="home-section" id="pendientes"><h2>Exámenes pendientes</h2>' +
+        (pending.length ? list(pending) : empty) + '</section>';
 
-    return head + resume + (GUEST ? '' : progressCard(p)) + catalog;
-}
-
-// Summary of the dashboard: latest result vs. goal and the subjects that need attention.
-function progressCard(p) {
     const history = getHistory();
-    if (!history.length) return '';
-    const t = totals(history);
-    const g = goalStatus(history, p);
-    const flagged = subjectStats(history, p).filter(s => s.attention).slice(0, 3);
-    const latest = g
-        ? '<p class="pc-line">Último resultado: <strong>' + g.latest + '</strong> de ' + g.total + ' · ' +
-          (g.reached ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '<span>te faltan <strong>' + (g.goal - g.latest) + '</strong> para tu meta de ' + g.goal + '</span>') + '</p>'
-        : '<p class="pc-line">Último resultado: <strong>' + t.latest.correct + '</strong> de ' + t.latest.total + ' (' + Math.round(t.latest.pct) + '%)</p>';
-    const attention = flagged.length
-        ? '<div class="pc-attention"><span class="muted small">Necesitan atención:</span>' + flagged.map(s => '<span class="badge">' + esc(s.name) + ' · ' + Math.round(s.pct) + '%</span>').join('') + '</div>'
-        : '';
-    return '<section class="home-section"><h2>Tu progreso</h2><a class="progress-card" href="progreso.html">' + latest + attention +
-        '<span class="resume-go">Ver mi progreso →</span></a></section>';
+    return head + pendingSection + historySection(history, historyAll) + progressSection(history, p, app.clientWidth);
 }
 
 // ---------------- profile editor ----------------
@@ -180,7 +178,7 @@ function startOverDialog() {
 
 // ---------------- events ----------------
 app.addEventListener('click', e => {
-    if (e.target.matches('[data-overlay]')) { editing = false; confirmStartOver = false; render(); return; }
+    if (e.target.matches('[data-overlay]')) { editing = false; editingGoal = false; confirmStartOver = false; render(); return; }
     const lvl = e.target.closest('[data-level]');
     if (lvl) { draft.level = lvl.dataset.level; draft.step = 2; render('#obName'); return; }
     const btn = e.target.closest('[data-act]');
@@ -189,6 +187,9 @@ app.addEventListener('click', e => {
         case 'back': draft.step -= 1; render(draft.step === 2 ? '#obName' : null); break;
         case 'skip-goal': finishOnboarding(null); break;
         case 'edit': editing = true; render('#edName'); break;
+        case 'edit-goal': editingGoal = true; render('#goalNumber'); break;
+        case 'close-goal': editingGoal = false; render(); break;
+        case 'history-all': historyAll = true; render(); break;
         case 'close-edit': editing = false; render('[data-act="edit"]'); break;
         case 'ask-start-over': confirmStartOver = true; render('#startOverDialog'); break;
         case 'cancel-start-over': confirmStartOver = false; render('[data-act="ask-start-over"]'); break;
@@ -212,7 +213,14 @@ app.addEventListener('click', e => {
 
 app.addEventListener('submit', e => {
     e.preventDefault();
-    if (e.target.id === 'nameForm') {
+    if (e.target.id === 'goalForm' && editingGoal) {
+        const remove = document.getElementById('noGoal');
+        const goal = remove && remove.checked ? null : readGoal(LEVELS[getProfile().level].goalTotal);
+        if (!goal && !(remove && remove.checked)) return;
+        updateProfile({ goal });
+        editingGoal = false;
+        render();   // goal card, chart goal line and "Necesita atención" follow the new goal
+    } else if (e.target.id === 'nameForm') {
         const name = document.getElementById('obName').value.trim();
         if (!name) { document.getElementById('obError').hidden = false; return; }
         draft.name = name;
@@ -247,6 +255,7 @@ app.addEventListener('submit', e => {
 bindGoalSync(app);
 app.addEventListener('change', e => {
     if (e.target.id === 'edNoGoal') document.getElementById('edGoalBox').hidden = e.target.checked;
+    if (e.target.id === 'noGoal') ['goalNumber', 'goalRange'].forEach(id => { document.getElementById(id).disabled = e.target.checked; });
     if (e.target.name === 'edLevel') {
         const num = document.getElementById('goalNumber'), range = document.getElementById('goalRange');
         const oldTotal = Number(range.max), newTotal = LEVELS[e.target.value].goalTotal;
@@ -258,4 +267,5 @@ app.addEventListener('change', e => {
 
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && editing) { editing = false; confirmStartOver = false; render('[data-act="edit"]'); }
+    else if (e.key === 'Escape' && editingGoal) { editingGoal = false; render(); }
 });

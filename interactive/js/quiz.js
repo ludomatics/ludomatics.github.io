@@ -49,30 +49,31 @@ loadExamFile(examId)
             '</section>';
     });
 
-// ?intento=<finishedAt>: a past graded attempt from the history, shown read-only.
+// ?intento=<finishedAt>: a graded attempt from the history (Historial on the home page).
 const pastAttemptId = Number(new URLSearchParams(location.search).get('intento')) || null;
-let past = null;   // the history record being viewed (read-only mode)
+let past = null;   // the history record being viewed; its answers are never saved over the current attempt
 
 function start(loaded) {
     exam = loaded;
     document.title = exam.title + ' · Ludomatics';
     if (pastAttemptId) return startPast();
     state = Object.assign(freshState(), loadAttempt(exam.id, exam.questions.length) || {}, { showMap: false, confirming: false });
-    if (!state.name) state.name = profileName();
+    // The profile's name always wins (it may have been edited since this attempt was saved).
+    if (profileName()) state.name = profileName();
     render({ focus: '#studentName' });
 }
 
-// Rebuilds a past attempt from its history record: same answers, results and review, nothing saved.
+// Rebuilds a graded attempt from its history record: same answers, results and review.
 function startPast() {
     const record = getHistory().find(r => r.examId === exam.id && r.finishedAt === pastAttemptId);
     const answers = record && typeof record.answers === 'string' ? record.answers.split('') : null;
     if (!answers || answers.length !== exam.questions.length) {
         app.innerHTML =
-            '<header class="topbar"><div class="topbar-main"><a class="back-link" href="progreso.html">← Mi progreso</a>' +
+            '<header class="topbar"><div class="topbar-main"><a class="back-link" href="./">← Inicio</a>' +
             '<p class="exam-title">' + esc(exam.title) + '</p></div></header>' +
             '<section class="panel"><h1 class="page-title">No se puede abrir este resultado</h1>' +
             '<p>' + (record ? 'El examen cambió desde que lo respondiste, así que ya no se pueden mostrar tus respuestas.' : 'No encontramos este resultado en tu historial.') + '</p>' +
-            '<div class="btn-row"><a class="btn primary" href="progreso.html">Volver a mi progreso</a></div></section>';
+            '<div class="btn-row"><a class="btn primary" href="./">Volver al inicio</a></div></section>';
         return;
     }
     past = record;
@@ -90,14 +91,14 @@ function showWrongLevel(examLevel, profileLevel, loaded) {
     const title = loaded.kind === 'plain' ? loaded.raw.title : (loaded.file.meta || {}).title;
     document.title = (title || 'Examen') + ' · Ludomatics';
     app.innerHTML =
-        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">← Exámenes</a>' +
+        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">' + backLabel + '</a>' +
         '<p class="exam-title">' + esc(title || 'Examen') + '</p></div></header>' +
         '<section class="panel"><h1 class="page-title">Este examen es de ' + LEVELS[examLevel].label.toLowerCase() + '</h1>' +
         '<p>Tu perfil es de <strong>' + LEVELS[profileLevel].label.toLowerCase() + '</strong>, así que este examen no está disponible para ti.</p>' +
         '<p class="muted">' + (levelLocked()
             ? 'Si necesitas otro nivel, usa «Empezar de nuevo» en «Editar perfil».'
             : 'Si elegiste el nivel equivocado, puedes cambiarlo en «Editar perfil».') + '</p>' +
-        '<div class="btn-row"><a class="btn primary" href="' + catalogHrefFor() + '">Ir a mis exámenes</a></div></section>';
+        '<div class="btn-row"><a class="btn primary" href="' + catalogHrefFor() + '">' + (MODE === 'guest' ? 'Ir a los exámenes' : 'Volver al inicio') + '</a></div></section>';
 }
 
 // ---------------- password screen ----------------
@@ -106,7 +107,7 @@ function showLock(file, error) {
     const meta = file.meta || {};
     document.title = (meta.title || 'Examen') + ' · Ludomatics';
     app.innerHTML =
-        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">← Exámenes</a>' +
+        '<header class="topbar"><div class="topbar-main"><a class="back-link" href="' + catalogHrefFor() + '">' + backLabel + '</a>' +
         '<p class="exam-title">' + esc(meta.title || 'Examen') + '</p></div></header>' +
         '<form class="panel" id="lockForm" autocomplete="off">' +
         '<h1 class="page-title">Examen protegido</h1>' +
@@ -156,7 +157,7 @@ function freshState() {
 }
 
 function persist() {
-    if (past) return;   // a past attempt is read-only: never saved over the current one
+    if (past) return;   // a history attempt is never saved over the current one
     foldClock();
     const { showMap, confirming, ...saved } = state;
     storageOk = saveAttempt(exam.id, saved);
@@ -256,12 +257,12 @@ function catalogHrefFor() {
     return MODE === 'guest' ? '../invitado/' : './';
 }
 const catalogHref = () => catalogHrefFor();
+const backLabel = MODE === 'guest' ? '← Exámenes' : '← Inicio';
 
 function topbar() {
     return '<header class="topbar"><div class="topbar-main">' +
         // No way out to the catalog while answering: keeps students focused.
-        (past ? '<a class="back-link" href="progreso.html">← Mi progreso</a>'
-            : state.view === 'start' || state.view === 'results' ? '<a class="back-link" href="' + catalogHref() + '">← Exámenes</a>' : '') +
+        (past || state.view === 'start' || state.view === 'results' ? '<a class="back-link" href="' + catalogHref() + '">' + backLabel + '</a>' : '') +
         '<p class="exam-title">' + esc(exam.title) + '</p>' +
         (storageOk ? '' : '<p class="save-warning">Tu progreso no se guardará si recargas la página.</p>') +
         '</div>' + (state.view === 'quiz' ? timerHtml() : '') +
@@ -289,9 +290,10 @@ function startView() {
         '<h1 class="page-title">' + esc(exam.title) + '</h1>' +
         '<p class="muted">' + exam.questions.length + ' preguntas de opción múltiple · ' + exam.sections.length + ' secciones · ' + durationText() + '</p>' +
         '<ul class="section-list">' + sections + '</ul>' +
-        '<div class="field"><label for="studentName">Tu nombre</label>' +
+        // The name comes from the profile; only a guest who skipped onboarding (direct exam link) is asked here.
+        (profileName() ? '' : '<div class="field"><label for="studentName">Tu nombre</label>' +
         '<input id="studentName" type="text" autocomplete="off" placeholder="Ingresa tu nombre" value="' + esc(state.name) + '">' +
-        (nameError ? '<p class="error">' + esc(nameError) + '</p>' : '') + '</div>' +
+        (nameError ? '<p class="error">' + esc(nameError) + '</p>' : '') + '</div>') +
         actions +
         '<p class="muted small">El tiempo empieza a correr al comenzar y se pausa si cierras la página.</p>' +
         '</section>';
@@ -454,6 +456,17 @@ function goalLine(correct, total) {
         : 'Tu meta: ' + g.goal + ' aciertos. Te faltaron ' + g.missing + '.') + '</p>';
 }
 
+// "Nuevo intento" logs a new score: the history keeps every graded attempt, only the current answers are cleared.
+// From an older result, an attempt already in progress is offered to continue instead of being wiped.
+function restartButton() {
+    if (!past) return '<button class="btn" data-act="restart">Nuevo intento</button>';
+    const current = loadAttempt(exam.id, exam.questions.length);
+    const inProgress = current && !current.finishedAt && (current.startedAt || current.answers.some(a => a !== null));
+    return inProgress
+        ? '<a class="btn" href="examen.html?id=' + encodeURIComponent(exam.id) + '">Continuar intento en progreso</a>'
+        : '<button class="btn" data-act="restart">Nuevo intento</button>';
+}
+
 function resultsView() {
     const { correctCount, bySection } = grade(exam, state.answers);
     // Keep the saved score in line with the current answer key (e.g. after a corrected answer is published),
@@ -469,7 +482,7 @@ function resultsView() {
     const heading = state.name ? esc(state.name) + ', este es tu resultado' : 'Tu resultado';
     const when = new Date(state.finishedAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
     const pastNote = past
-        ? '<p class="past-note">Resultado del ' + when + ' · solo lectura</p>' +
+        ? '<p class="past-note">Resultado del ' + when + '</p>' +
           (past.correct !== correctCount
             ? '<p class="muted small">En tu historial quedó con ' + past.correct + ' aciertos; la clave de respuestas se corrigió después, así que aquí se califica con la clave actual.</p>'
             : '')
@@ -485,9 +498,8 @@ function resultsView() {
         '<tbody>' + rows + '</tbody></table></div>' +
         '<div class="btn-row"><button class="btn primary" data-act="review">Revisar respuestas</button>' +
         '<button class="btn" data-act="download-card" id="cardBtn">Descargar resultado</button>' +
-        (past ? '' : '<button class="btn" data-act="restart">Nuevo intento</button>') + '</div>' +
+        restartButton() + '</div>' +
         '<p class="muted small" id="cardNote" aria-live="polite"></p>' +
-        (MODE === 'personal' && getProfile() && !past ? '<p><a href="progreso.html">Ver mi progreso →</a></p>' : '') +
         '</section>' + mapPanel(true, false);
 }
 
@@ -515,7 +527,7 @@ function choose(letter) {
 
 function begin() {
     const input = document.getElementById('studentName');
-    const name = input ? input.value.trim() : state.name;
+    const name = profileName() || (input ? input.value.trim() : state.name);
     if (!name) {
         nameError = 'Escribe tu nombre para comenzar.';
         render({ focus: '#studentName' });
@@ -525,7 +537,7 @@ function begin() {
     set({ name, view: 'quiz', startedAt: state.startedAt || Date.now() }, { scrollTop: true });
 }
 
-// One history record per graded attempt (personal mode only): the data behind the progress dashboard.
+// One history record per graded attempt (personal mode only): the data behind "Historial" and "Tu progreso".
 function recordHistory(result, finishedAt) {
     addToHistory({
         examId: exam.id,
@@ -619,6 +631,7 @@ app.addEventListener('click', e => {
         case 'restart':
             // New attempt by the same student: start from the profile's name (or empty without a profile).
             clearAttempt(exam.id);
+            if (past) { location.href = 'examen.html?id=' + encodeURIComponent(exam.id); break; }
             runSince = null;
             state = Object.assign(freshState(), { name: profileName() });
             nameError = '';

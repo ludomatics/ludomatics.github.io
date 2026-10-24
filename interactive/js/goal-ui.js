@@ -1,4 +1,4 @@
-// The goal field (number + slider + percentage), shared by onboarding, "Editar perfil" and the dashboard.
+// The goal field (number + slider + percentage), shared by onboarding, "Editar perfil" and "Tu progreso".
 
 export function goalFields(value, total) {
     return '<div class="goal-field"><label for="goalNumber">Aciertos</label>' +

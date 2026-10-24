@@ -267,14 +267,14 @@ mjx-container[jax="SVG"][display="true"] { display: block; }
 }
 
 /* ---------- student home (/interactive/, /invitado/) ---------- */
-.list-page.home { max-width: 960px; }
+.list-page.home { max-width: 800px; }
 .home-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
 .home-head .brand { margin: 0; color: var(--blue); font-weight: bold; }
 .home-head h1 { margin: 0; font-size: 2rem; line-height: 1.2; text-wrap: balance; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .guest-banner { margin: 0 0 6px; padding: 8px 12px; border-radius: 4px; background: #fff3e0; color: #8a4b00; }
 .home-section { margin-bottom: 32px; }
-.home-section h2 { margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--blue); color: var(--ink); font-size: 1.3rem; }
+.home-section > h2 { margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--blue); color: var(--ink); font-size: 1.3rem; }
 .resume-list { display: grid; gap: 10px; }
 .resume-card {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
@@ -284,9 +284,14 @@ mjx-container[jax="SVG"][display="true"] { display: block; }
 .resume-card > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .resume-card:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
 .resume-go { color: var(--blue); font-weight: bold; white-space: nowrap; }
-.history-list { list-style: none; margin: 0; padding: 0; border-radius: 8px; background: var(--card); box-shadow: var(--shadow); }
-.history-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--rule); }
-.history-list li:last-child { border-bottom: 0; }
+.history-cards { display: grid; gap: 10px; }
+.history-card {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto 12px; align-items: center; gap: 12px;
+    padding: 16px 18px; border-radius: 8px; background: var(--card); box-shadow: var(--shadow); color: var(--ink); text-decoration: none;
+}
+a.history-card:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+.more-btn { margin-top: 12px; }
+.empty-note { margin: 0; padding: 20px; border: 2px dashed var(--rule); border-radius: 8px; color: var(--muted); text-align: center; }
 .h-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .h-score { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-variant-numeric: tabular-nums; }
 .goal-hit { color: var(--ok); font-size: 0.85rem; font-weight: bold; }
@@ -326,9 +331,8 @@ fieldset.field legend { margin-bottom: 6px; padding: 0; font-weight: bold; }
 .field .label { font-weight: bold; }
 .locked-level { margin: 0; font-size: 1.05rem; }
 
-/* ---------- progress dashboard (/interactive/progreso.html) ---------- */
-.dashboard { max-width: 760px; padding-bottom: 32px; }
-.dashboard .topbar .page-title { font-size: 1.9rem; }
+/* ---------- "Tu progreso" on the home page ---------- */
+.dash { display: flex; flex-direction: column; gap: 16px; }
 .dash-h { margin: 0; font-size: 1.2rem; }
 .dash-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .tile { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 8px; background: var(--card); box-shadow: var(--shadow); }
@@ -370,20 +374,6 @@ fieldset.field legend { margin-bottom: 6px; padding: 0; font-weight: bold; }
 .trend.up { color: var(--ok); font-weight: bold; }
 .trend.down { color: var(--bad); font-weight: bold; }
 
-/* home summary card */
-.progress-card {
-    display: flex; flex-direction: column; gap: 10px; padding: 16px 18px;
-    border-left: 4px solid var(--ok); border-radius: 8px; background: var(--card); box-shadow: var(--shadow);
-    color: var(--ink); text-decoration: none;
-}
-.progress-card:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
-.pc-line { margin: 0; }
-.pc-attention { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.progress-card .resume-go { align-self: flex-end; }
-
-/* history rows that open a past attempt */
-.history-list li:has(> .history-link) { padding: 0; }
-.history-link { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px 16px; color: var(--ink); text-decoration: none; }
-.history-link:hover { background: var(--blue-tint); }
+/* history cards */
 .h-go { color: var(--faint); font-size: 1.4rem; line-height: 1; }
 .past-note { margin: 0; padding: 6px 12px; align-self: flex-start; border-radius: 4px; background: var(--blue-soft); color: var(--blue-dark); font-size: 0.9rem; font-weight: bold; }

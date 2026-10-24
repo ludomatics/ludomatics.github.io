@@ -1,83 +1,44 @@
-// "Tu progreso": the student's dashboard, built from their history of graded exams.
-import { LEVELS, getProfile, getHistory, updateProfile } from './profile.js';
-import { goalFields, bindGoalSync, readGoal } from './goal-ui.js';
+// "Tu progreso" and "Historial" on the home page, built from the student's history of graded exams.
 import { esc } from './catalog.js';
+import { LEVELS } from './profile.js';
+import { goalFields } from './goal-ui.js';
 import { scoreSeries, totals, subjectStats, goalStatus, attentionThreshold, formatStudyTime, ATTENTION_MIN_QUESTIONS } from './stats.js';
 
-const app = document.getElementById('app');
-let profile = getProfile();
-let editingGoal = false;
-if (!profile) location.replace('./');   // no onboarding yet: the home page takes care of it
-else {
-    render();
-    // Redraw the chart at the new width when the screen rotates or the window is resized.
-    let timer;
-    addEventListener('resize', () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            const card = document.getElementById('chartCard');
-            if (card) card.outerHTML = chartCard(getHistory());
-        }, 150);
-    });
+// History cards shown before "Ver todo".
+export const HISTORY_PREVIEW = 5;
+
+let profile = null;   // set by progressSection(); the cards below read it
+let chartWidth = 600;
+
+// Everything under "Tu progreso". `width` is the space available for the chart.
+export function progressSection(history, p, width) {
+    profile = p;
+    chartWidth = width;
+    const body = history.length
+        ? tiles(history) + goalCard(history) + chartCard(history) + subjectsCard(history)
+        : '<section class="panel"><p class="muted">Cuando califiques tu primer examen, aquí verás tu avance hacia tu meta, ' +
+          'tus resultados en el tiempo y qué materias necesitan más atención.</p>' +
+          (p.goal ? '' : '<div class="btn-row"><button class="btn" data-act="edit-goal">Define tu meta</button></div>') + '</section>';
+    return '<section class="home-section" id="progreso"><h2>Tu progreso</h2><div class="dash">' + body + '</div></section>';
 }
 
-function render() {
-    const history = getHistory();
-    const level = LEVELS[profile.level];
-    const head = '<header class="topbar"><div class="topbar-main"><a class="back-link" href="./">← Mis exámenes</a>' +
-        '<h1 class="page-title">Tu progreso</h1><p class="muted">' + esc(profile.name) + ' · ' + level.label + '</p></div></header>';
-    if (!history.length) {
-        app.innerHTML = head + '<section class="panel"><h2 class="dash-h">Aún no tienes resultados</h2>' +
-            '<p>Cuando termines y califiques tu primer examen, aquí verás tu avance hacia tu meta, tus materias más fuertes y las que necesitan más atención.</p>' +
-            '<div class="btn-row"><a class="btn primary" href="./">Ir a mis exámenes</a></div></section>';
-        return;
-    }
-    app.innerHTML = head + tiles(history) + goalCard(history) + chartCard(history) + subjectsCard(history) + historyCard(history) +
-        (editingGoal ? goalDialog() : '');
-    document.body.style.overflow = editingGoal ? 'hidden' : '';
-}
+// Only the chart, redrawn when the screen width changes.
+export function chartOnly(history, p, width) { profile = p; chartWidth = width; return chartCard(history); }
 
-// ---------------- goal editor (overlay on this page) ----------------
-function goalDialog() {
-    const total = LEVELS[profile.level].goalTotal;
-    const value = profile.goal ? Math.round((profile.goal.correct / profile.goal.total) * total) : Math.round(total * 0.75);
+// ---------------- goal editor (overlay) ----------------
+export function goalDialog(p) {
+    const total = LEVELS[p.level].goalTotal;
+    const value = p.goal ? Math.round((p.goal.correct / p.goal.total) * total) : Math.round(total * 0.75);
     return '<div class="overlay" data-overlay><form class="panel dialog" id="goalForm" role="dialog" aria-modal="true" aria-labelledby="goalTitle">' +
-        '<div class="dialog-head"><h2 id="goalTitle">' + (profile.goal ? 'Cambiar mi meta' : 'Define tu meta') + '</h2>' +
+        '<div class="dialog-head"><h2 id="goalTitle">' + (p.goal ? 'Cambiar mi meta' : 'Define tu meta') + '</h2>' +
         '<button class="btn ghost close-btn" type="button" data-act="close-goal" aria-label="Cerrar">×</button></div>' +
-        '<p class="muted">¿Cuántos aciertos quieres obtener en el examen de ' + LEVELS[profile.level].label.toLowerCase() + '?</p>' +
+        '<p class="muted">¿Cuántos aciertos quieres obtener en el examen de ' + LEVELS[p.level].label.toLowerCase() + '?</p>' +
         goalFields(value, total) +
-        (profile.goal ? '<label class="radio"><input type="checkbox" id="noGoal"> Quitar mi meta</label>' : '') +
+        (p.goal ? '<label class="radio"><input type="checkbox" id="noGoal"> Quitar mi meta</label>' : '') +
         '<div class="btn-row"><button class="btn primary" type="submit">Guardar</button><button class="btn" type="button" data-act="close-goal">Cancelar</button></div>' +
         '</form></div>';
 }
 
-function openGoal() { editingGoal = true; render(); const n = document.getElementById('goalNumber'); if (n) n.focus(); }
-function closeGoal() { editingGoal = false; render(); }
-
-app.addEventListener('click', e => {
-    if (e.target.matches('[data-overlay]')) { closeGoal(); return; }
-    const btn = e.target.closest('[data-act]');
-    if (!btn) return;
-    if (btn.dataset.act === 'edit-goal') openGoal();
-    if (btn.dataset.act === 'close-goal') closeGoal();
-});
-app.addEventListener('submit', e => {
-    if (e.target.id !== 'goalForm') return;
-    e.preventDefault();
-    const remove = document.getElementById('noGoal');
-    const goal = remove && remove.checked ? null : readGoal(LEVELS[profile.level].goalTotal);
-    if (!goal && !(remove && remove.checked)) return;
-    updateProfile({ goal });
-    profile = getProfile();
-    editingGoal = false;
-    render();   // tiles, goal card, chart goal line and "Necesita atención" all follow the new goal
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && editingGoal) closeGoal(); });
-app.addEventListener('change', e => {
-    if (e.target.id !== 'noGoal') return;
-    ['goalNumber', 'goalRange'].forEach(id => { document.getElementById(id).disabled = e.target.checked; });
-});
-bindGoalSync(app);
 
 // ---------------- summary tiles ----------------
 function tiles(history) {
@@ -118,7 +79,7 @@ function chartCard(history) {
     const series = scoreSeries(history);
     const goal = profile.goal ? (profile.goal.correct / profile.goal.total) * 100 : null;
     // Drawn at the panel's real width (no scaling), so labels keep their size on phones and computers.
-    const W = Math.max(280, Math.min(720, app.clientWidth - 48)), H = 230, L = 44, R = 12, T = 18, B = 34;
+    const W = Math.max(260, Math.min(720, chartWidth - 48)), H = 230, L = 44, R = 12, T = 18, B = 34;
     const x = i => (series.length === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (series.length - 1));
     const y = p => T + (1 - p / 100) * (H - T - B);
     const date = t => new Date(t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
@@ -183,19 +144,26 @@ function subjectsCard(history) {
         '. Una materia se marca cuando ya respondiste al menos ' + ATTENTION_MIN_QUESTIONS + ' preguntas de ella.</p></section>';
 }
 
-// ---------------- full history ----------------
-function historyCard(history) {
+// ---------------- history ----------------
+// One card per graded attempt, newest first. Tapping opens that attempt's results.
+export function historySection(history, showAll) {
     const date = t => new Date(t).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
-    const items = scoreSeries(history).reverse().map(r => {
+    const all = scoreSeries(history).reverse();
+    const shown = showAll ? all : all.slice(0, HISTORY_PREVIEW);
+    const cards = shown.map(r => {
         const goal = typeof r.goal === 'number'
             ? (r.correct >= r.goal ? '<span class="goal-hit">✓ Meta alcanzada</span>' : '<span class="goal-miss">A ' + (r.goal - r.correct) + ' de tu meta</span>')
             : '';
         const body = '<span class="h-title"><strong>' + esc(r.title) + '</strong><span class="muted small">' + date(r.at) + '</span></span>' +
             '<span class="h-score"><span><strong>' + r.correct + '</strong> / ' + r.total + ' <span class="muted small">(' + Math.round(r.pct) + '%)</span></span>' + goal + '</span>';
-        // Tappable when the record kept the answers: opens that attempt's results and review, read-only.
+        // Records without stored answers (very old ones) can't rebuild their results, so they aren't links.
         return r.answers && r.answers.length === r.total
-            ? '<li><a class="history-link" href="examen.html?id=' + encodeURIComponent(r.examId) + '&intento=' + r.at + '">' + body + '<span class="h-go" aria-hidden="true">›</span></a></li>'
-            : '<li>' + body + '</li>';
+            ? '<a class="history-card" href="examen.html?id=' + encodeURIComponent(r.examId) + '&intento=' + r.at + '">' + body + '<span class="h-go" aria-hidden="true">›</span></a>'
+            : '<div class="history-card">' + body + '<span></span></div>';
     }).join('');
-    return '<section class="home-section"><h2>Historial</h2><ul class="history-list">' + items + '</ul></section>';
+    const more = !showAll && all.length > HISTORY_PREVIEW
+        ? '<button class="btn small-btn more-btn" data-act="history-all">Ver todo (' + all.length + ')</button>' : '';
+    const content = all.length ? '<div class="history-cards">' + cards + '</div>' + more
+        : '<p class="empty-note">Aquí aparecerá cada examen que califiques.</p>';
+    return '<section class="home-section" id="historial"><h2>Historial</h2>' + content + '</section>';
 }

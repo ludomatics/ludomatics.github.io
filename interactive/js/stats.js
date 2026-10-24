@@ -1,4 +1,4 @@
-// Progress numbers for the dashboard, all computed from the history of graded exams (profile.js).
+// Progress numbers for "Tu progreso", all computed from the history of graded exams (profile.js).
 
 export const SUBJECT_NAMES = {
     fisica: 'Física',
