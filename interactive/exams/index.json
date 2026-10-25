@@ -55,6 +55,14 @@
       "questionCount": 128,
       "description": "Examen muestra de la guía 2020 para la educación media superior.",
       "protected": true
+    },
+    {
+      "id": "unam-2017-bachillerato",
+      "title": "UNAM 2017 · Bachillerato",
+      "category": "Bachillerato",
+      "questionCount": 128,
+      "description": "Examen muestra de la guía 2017 para la educación media superior.",
+      "protected": true
     }
   ]
 }
