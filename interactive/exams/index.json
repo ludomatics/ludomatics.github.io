@@ -63,6 +63,14 @@
       "questionCount": 128,
       "description": "Examen muestra de la guía 2017 para la educación media superior.",
       "protected": true
+    },
+    {
+      "id": "unam-2016-bachillerato",
+      "title": "UNAM 2016 · Bachillerato",
+      "category": "Bachillerato",
+      "questionCount": 128,
+      "description": "Examen muestra de la guía 2016 para la educación media superior.",
+      "protected": true
     }
   ]
 }
